@@ -1,0 +1,118 @@
+// =============================================================================
+// iLink-Switch Prisma Schema
+//
+// Default: SQLite (zero-config). To switch to PostgreSQL or MySQL, change the
+// `provider` line below AND set DATABASE_URL in .env accordingly.
+//
+//   SQLite:        provider = "sqlite"      url = "file:./dev.db"
+//   PostgreSQL:    provider = "postgresql"  url = "postgresql://user:pass@host:5432/ilink?schema=public"
+//   MySQL:         provider = "mysql"       url = "mysql://user:pass@host:3306/ilink"
+//
+// Enums are stored as String so the same schema works on all three providers.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// Upstream Channel — a bound upstream bot / HTTP webhook endpoint
+// -----------------------------------------------------------------------------
+model Channel {
+  id          String      @id @default(cuid())
+  // !switch <alias> — unique, URL-safe name
+  alias       String      @unique
+  name        String
+  description String      @default("")
+  // "HTTP" | "WECHATY" | "CUSTOM"  (app-validated)
+  type        String      @default("HTTP")
+  // HTTP webhook URL the router forwards messages to
+  webhookUrl  String      @default("")
+  // Shared secret the router sends in `X-ILink-Key` header
+  apiKey      String      @default("")
+  // Optional extra config as JSON (e.g. { "headers": {...}, "model": "gpt-4" })
+  config      String      @default("{}")
+  enabled     Boolean     @default(true)
+  isDefault   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  sessions    Session[]
+  messages    Message[]
+
+  @@index([enabled])
+}
+
+// -----------------------------------------------------------------------------
+// WeChat user session — one per user contacting the router
+// -----------------------------------------------------------------------------
+model Session {
+  id              String    @id @default(cuid())
+  // WeChat user id (Contact.id from wechaty)
+  wxId            String    @unique
+  wxName          String    @default("")
+  // Alias of currently active channel (FK by alias to allow easy switching)
+  currentChannel  String?
+  // Total messages received from this user
+  messageCount    Int       @default(0)
+  // Last active timestamp
+  lastActiveAt    DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  channel         Channel?  @relation(fields: [currentChannel], references: [alias], onDelete: SetNull)
+  messages        Message[]
+
+  @@index([currentChannel])
+}
+
+// -----------------------------------------------------------------------------
+// Message log — every message routed (in/out)
+// -----------------------------------------------------------------------------
+model Message {
+  id           String    @id @default(cuid())
+  sessionId    String
+  // WeChat message id (Message.id from wechaty)
+  wxMsgId      String    @default("")
+  // "IN" | "OUT"  (app-validated)
+  direction    String
+  text         String    @default("")
+  // "command" | "forwarded" | "reply" | "system"  (app-validated)
+  kind         String    @default("forwarded")
+  // error message if forwarding failed
+  error        String    @default("")
+  // response time in ms (for forwarded messages)
+  latencyMs    Int?
+  channelId    String?
+  createdAt    DateTime  @default(now())
+
+  session      Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  channel      Channel?  @relation(fields: [channelId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId, createdAt])
+  @@index([channelId, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// Router state — single-row table for runtime state (login QR, status, etc.)
+// -----------------------------------------------------------------------------
+model RouterState {
+  id            String    @id @default("singleton")
+  // "offline" | "starting" | "ready" | "error"
+  status        String    @default("offline")
+  // "logged_out" | "scanning" | "logged_in" | "error"
+  loginStatus   String    @default("logged_out")
+  selfWxId      String    @default("")
+  selfWxName    String    @default("")
+  // Last QR code (URL) for scan-to-bind display
+  lastQrCode    String    @default("")
+  lastQrAt      DateTime?
+  lastError     String    @default("")
+  startedAt     DateTime?
+  updatedAt     DateTime  @updatedAt
+}
