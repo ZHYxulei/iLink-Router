@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toaster';
 import { api } from '@/lib/api-client';
 import { formatTime, timeAgo } from '@/lib/utils';
-import { Power, RefreshCw, Square, QrCode, CheckCircle2, AlertCircle, Loader2, Radio } from 'lucide-react';
+import { Power, RefreshCw, Square, QrCode, CheckCircle2, AlertCircle, Loader2, Radio, Info } from 'lucide-react';
 
 interface RouterStatus {
   status: string;
@@ -39,7 +39,7 @@ export default function RouterPage() {
     try {
       const s = await api<RouterStatus>('/api/router/status');
       setStatus(s);
-      const q = await api<QrPayload>('/api/qr?format=dataurl');
+      const q = await api<QrPayload>('/api/qr?format=dataurl', { method: 'POST' });
       setQr(q);
     } catch (err) {
       toast({
@@ -56,17 +56,20 @@ export default function RouterPage() {
     return () => clearInterval(t);
   }, [refresh]);
 
-  const doAction = async (action: 'start' | 'stop' | 'reset') => {
+  const doAction = async (action: 'start' | 'stop' | 'reset' | 'restart') => {
     setBusy(action);
     try {
       await api('/api/router/status', {
         method: 'POST',
         body: JSON.stringify({ action }),
       });
-      toast({
-        title: action === 'start' ? '已启动' : action === 'stop' ? '已停止' : '已重置',
-        variant: 'success',
-      });
+      const labels: Record<string, string> = {
+        start: '已启动',
+        stop: '已停止',
+        reset: '已重置',
+        restart: '已重启',
+      };
+      toast({ title: labels[action] || '操作完成', variant: 'success' });
       setTimeout(refresh, 500);
     } catch (err) {
       toast({
@@ -140,13 +143,25 @@ export default function RouterPage() {
                     二维码更新于 {timeAgo(qr.lastQrAt)}
                   </p>
                 </div>
+              ) : !isRunning ? (
+                <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                  <div className="flex h-32 w-32 items-center justify-center rounded-full bg-amber-50">
+                    <Info className="h-14 w-14 text-amber-500" />
+                  </div>
+                  <p className="text-sm font-medium text-amber-600">
+                    路由未启动，无法显示二维码
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    请先点击下方「启动路由」按钮
+                  </p>
+                </div>
               ) : (
                 <div className="flex flex-col items-center gap-3 text-muted-foreground">
                   <div className="flex h-32 w-32 items-center justify-center rounded-full bg-muted">
                     <Loader2 className="h-12 w-12 animate-spin" />
                   </div>
                   <p className="text-sm">
-                    {isRunning ? '正在生成二维码...' : '点击下方「启动路由」按钮'}
+                    正在生成二维码...
                   </p>
                 </div>
               )}
@@ -240,6 +255,16 @@ export default function RouterPage() {
               >
                 <Square className="h-4 w-4" />
                 停止
+              </Button>
+              <Button
+                onClick={() => doAction('restart')}
+                disabled={!isRunning}
+                loading={busy === 'restart'}
+                variant="outline"
+                title="停掉当前 bot 并用新代码重建，无需重新扫码（开发热重载用）"
+              >
+                <RefreshCw className="h-4 w-4" />
+                重启路由
               </Button>
             </div>
           </CardContent>

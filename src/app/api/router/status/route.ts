@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(status);
 }
 
-/** POST /api/router/status — control the bot. Body: { action: "start"|"stop"|"reset" } */
+/** POST /api/router/status — control the bot. Body: { action: "start"|"stop"|"reset"|"restart" } */
 export async function POST(req: NextRequest) {
   const unauth = requireAdmin(req);
   if (unauth) return unauth;
@@ -28,6 +28,8 @@ export async function POST(req: NextRequest) {
       await router.stop();
     } else if (action === 'reset') {
       await router.reset();
+    } else if (action === 'restart') {
+      await router.restart();
     } else {
       return NextResponse.json(
         { error: 'unknown action', action },
