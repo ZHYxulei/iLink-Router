@@ -4,13 +4,31 @@ import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/toaster';
-import { Settings as SettingsIcon, KeyRound, Save } from 'lucide-react';
+import { api } from '@/lib/api-client';
+import { Settings as SettingsIcon, KeyRound, Save, Shield, Loader2 } from 'lucide-react';
+
+interface SettingItem {
+  key: string;
+  value: boolean | string;
+  type: 'boolean' | 'string';
+  label: string;
+  description: string;
+  default: boolean | string;
+}
 
 export default function SettingsPage() {
   const { toast } = useToast();
   const [token, setToken] = React.useState('');
+  const [settings, setSettings] = React.useState<SettingItem[]>([]);
+  const [settingsLoading, setSettingsLoading] = React.useState(true);
+  const [settingsSaving, setSettingsSaving] = React.useState<string | null>(null);
+  // 本地编辑态：key -> value
+  const [editValues, setEditValues] = React.useState<Record<string, boolean | string>>({});
 
+  // 加载 admin token
   React.useEffect(() => {
     const t = typeof window !== 'undefined'
       ? window.localStorage.getItem('ilink_admin_token') || ''
@@ -18,7 +36,30 @@ export default function SettingsPage() {
     setToken(t);
   }, []);
 
-  const onSave = () => {
+  // 加载 API 设置
+  const loadSettings = React.useCallback(async () => {
+    try {
+      const data = await api<{ items: SettingItem[] }>('/api/settings');
+      setSettings(data.items);
+      const edits: Record<string, boolean | string> = {};
+      for (const item of data.items) edits[item.key] = item.value;
+      setEditValues(edits);
+    } catch (err) {
+      toast({
+        title: '加载设置失败',
+        description: (err as Error).message,
+        variant: 'error',
+      });
+    } finally {
+      setSettingsLoading(false);
+    }
+  }, [toast]);
+
+  React.useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  const onSaveToken = () => {
     if (typeof window !== 'undefined') {
       if (token) {
         window.localStorage.setItem('ilink_admin_token', token);
@@ -29,6 +70,30 @@ export default function SettingsPage() {
     }
   };
 
+  const onSaveSetting = async (key: string) => {
+    const value = editValues[key];
+    if (value === undefined) return;
+    setSettingsSaving(key);
+    try {
+      await api('/api/settings', {
+        method: 'POST',
+        body: JSON.stringify({ key, value }),
+      });
+      setSettings((prev) =>
+        prev.map((s) => (s.key === key ? { ...s, value } : s)),
+      );
+      toast({ title: '已保存', variant: 'success' });
+    } catch (err) {
+      toast({
+        title: '保存失败',
+        description: (err as Error).message,
+        variant: 'error',
+      });
+    } finally {
+      setSettingsSaving(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -36,6 +101,7 @@ export default function SettingsPage() {
         <p className="mt-1 text-sm text-muted-foreground">管理员认证与运行配置</p>
       </div>
 
+      {/* Admin Token */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -55,7 +121,7 @@ export default function SettingsPage() {
               onChange={(e) => setToken(e.target.value)}
               placeholder="留空则禁用管理员认证"
             />
-            <Button onClick={onSave}>
+            <Button onClick={onSaveToken}>
               <Save className="h-4 w-4" />
               保存
             </Button>
@@ -63,6 +129,101 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* API 访问控制 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-primary" />
+            API 访问控制
+          </CardTitle>
+          <CardDescription>
+            二维码 API (<code>/api/qr</code>) 的请求方式与密钥校验
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {settingsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              加载中...
+            </div>
+          ) : (
+            settings.map((item) => (
+              <div
+                key={item.key}
+                className="rounded-lg border border-border bg-muted/20 p-4"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <Label className="text-sm font-medium">{item.label}</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {item.description}
+                    </p>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      键: <code className="font-mono">{item.key}</code>
+                      {' · '}
+                      默认: <code className="font-mono">{String(item.default)}</code>
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {item.type === 'boolean' ? (
+                      <Switch
+                        checked={Boolean(editValues[item.key])}
+                        onChange={(e) =>
+                          setEditValues((prev) => ({
+                            ...prev,
+                            [item.key]: e.target.checked,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <Input
+                        type="text"
+                        value={String(editValues[item.key] ?? '')}
+                        onChange={(e) =>
+                          setEditValues((prev) => ({
+                            ...prev,
+                            [item.key]: e.target.value,
+                          }))
+                        }
+                        placeholder="留空则不校验"
+                        className="w-56"
+                      />
+                    )}
+                    {item.type === 'boolean' ? (
+                      <Button
+                        size="sm"
+                        onClick={() => onSaveSetting(item.key)}
+                        disabled={settingsSaving === item.key}
+                      >
+                        {settingsSaving === item.key ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Save className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => onSaveSetting(item.key)}
+                        disabled={settingsSaving === item.key}
+                      >
+                        {settingsSaving === item.key ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Save className="h-3.5 w-3.5" />
+                        )}
+                        保存
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 运行配置 */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
