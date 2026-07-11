@@ -2,9 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
+import { router } from '@/lib/router';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+const CHANNEL_TYPE_ENUM = z.enum([
+  'WEBHOOK',
+  'HTTP_CLIENT', 'HTTP_SERVER', 'HTTP_SSE_SERVER',
+  'ONEBOT_V11', 'ONEBOT_V12', 'SATORI', 'WS',
+  'WS_SERVER', 'ONEBOT_V11_WS_SERVER', 'ONEBOT_V12_WS_SERVER',
+  'HTTP', 'WECHATY', 'CUSTOM',
+]);
 
 const ChannelUpdate = z.object({
   alias: z
@@ -15,7 +24,7 @@ const ChannelUpdate = z.object({
     .optional(),
   name: z.string().min(1).max(64).optional(),
   description: z.string().max(256).optional(),
-  type: z.enum(['HTTP', 'WECHATY', 'CUSTOM']).optional(),
+  type: CHANNEL_TYPE_ENUM.optional(),
   webhookUrl: z.string().url().or(z.literal('')).optional(),
   apiKey: z.string().max(256).optional(),
   config: z.string().optional(),
@@ -72,6 +81,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       where: { id: ctx.params.id },
       data: d,
     });
+    // 如果是 WS 服务端类型，重载
+    await router.reloadWsServer(channel).catch(() => {});
+    // 如果是 HTTP 服务端类型，重载
+    await router.reloadHttpServer(channel).catch(() => {});
     return NextResponse.json({ channel });
   } catch (err) {
     const msg = (err as Error).message;
@@ -87,6 +100,10 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
   const unauth = requireAdmin(req);
   if (unauth) return unauth;
   try {
+    // 停止可能存在的 WS 服务端
+    await router.unloadWsServer(ctx.params.id).catch(() => {});
+    // 停止可能存在的 HTTP 服务端
+    await router.unloadHttpServer(ctx.params.id).catch(() => {});
     await prisma.channel.delete({ where: { id: ctx.params.id } });
     return NextResponse.json({ ok: true });
   } catch (err) {

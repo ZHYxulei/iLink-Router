@@ -11,7 +11,38 @@ import { Dialog } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/toaster';
 import { api } from '@/lib/api-client';
 import { timeAgo } from '@/lib/utils';
-import { Plus, Pencil, Trash2, Zap, Star } from 'lucide-react';
+import { Plus, Pencil, Trash2, Zap, Star, ArrowLeft, Copy, ExternalLink } from 'lucide-react';
+import { QrDropzone } from '@/components/qr-dropzone';
+import type { ParsedQr } from '@/lib/qr-parse';
+import {
+  CHANNEL_TYPES,
+  CHANNEL_TYPE_MAP,
+  readConfig,
+  writeConfig,
+  getInboundWebhookUrl,
+  type ConfigField,
+} from '@/lib/channel-types';
+
+// 旧类型 → 新类型的展示映射
+const TYPE_DISPLAY_MAP: Record<string, string> = {
+  HTTP: 'WEBHOOK',
+  WECHATY: 'WEBHOOK',
+  CUSTOM: 'WEBHOOK',
+};
+
+function displayType(type: string): string {
+  return TYPE_DISPLAY_MAP[type] || type;
+}
+
+function typeLabel(type: string): string {
+  const t = displayType(type);
+  return CHANNEL_TYPE_MAP[t]?.label || t;
+}
+
+function typeIcon(type: string): string {
+  const t = displayType(type);
+  return CHANNEL_TYPE_MAP[t]?.icon || '📌';
+}
 
 interface Channel {
   id: string;
@@ -68,11 +99,7 @@ export default function ChannelsPage() {
         { method: 'POST', body: JSON.stringify({ mode: 'probe' }) },
       );
       if (r.ok) {
-        toast({
-          title: '渠道可达',
-          description: `延迟 ${r.latencyMs}ms`,
-          variant: 'success',
-        });
+        toast({ title: '渠道可达', description: `延迟 ${r.latencyMs}ms`, variant: 'success' });
       } else {
         toast({ title: '渠道不可达', description: r.error || '未知错误', variant: 'error' });
       }
@@ -87,12 +114,12 @@ export default function ChannelsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">渠道管理</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            绑定多个上游微信机器人 / HTTP 服务，路由将按用户选择转发消息
+            绑定多个上游渠道（Webhook / OneBot / Satori / WebSocket），路由将按用户选择转发消息
           </p>
         </div>
         <Button onClick={() => setCreating(true)}>
           <Plus className="h-4 w-4" />
-          绑定新渠道
+          添加渠道
         </Button>
       </div>
 
@@ -104,13 +131,13 @@ export default function ChannelsPage() {
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
               <Plus className="h-8 w-8 text-muted-foreground" />
             </div>
-            <div className="text-lg font-semibold">还没有绑定任何渠道</div>
+            <div className="text-lg font-semibold">还没有添加任何渠道</div>
             <p className="max-w-md text-sm text-muted-foreground">
-              渠道是上游微信机器人或 HTTP 服务，路由会把用户消息转发到当前会话选定的渠道
+              渠道是上游服务，路由会把用户消息转发到当前会话选定的渠道并获取回复
             </p>
             <Button onClick={() => setCreating(true)}>
               <Plus className="h-4 w-4" />
-              绑定第一个渠道
+              添加第一个渠道
             </Button>
           </CardContent>
         </Card>
@@ -122,6 +149,7 @@ export default function ChannelsPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
+                      <span className="text-lg">{typeIcon(c.type)}</span>
                       <CardTitle className="truncate text-base">{c.name}</CardTitle>
                       {c.isDefault && (
                         <Badge variant="warning" className="shrink-0">
@@ -135,7 +163,7 @@ export default function ChannelsPage() {
                         {c.alias}
                       </code>
                       <Badge variant="outline" className="text-[10px]">
-                        {c.type}
+                        {typeLabel(c.type)}
                       </Badge>
                       <Badge variant={c.enabled ? 'success' : 'secondary'} className="text-[10px]">
                         {c.enabled ? '启用' : '禁用'}
@@ -148,8 +176,32 @@ export default function ChannelsPage() {
                 {c.description && (
                   <p className="text-xs text-muted-foreground">{c.description}</p>
                 )}
+                {/* WEBHOOK 类型：显示生成的 webhook URL */}
+                {displayType(c.type) === 'WEBHOOK' && getInboundWebhookUrl(c.alias, c.config) && (
+                  <div className="rounded-md border border-primary/20 bg-primary/5 p-2">
+                    <div className="mb-1 flex items-center gap-1 text-[10px] font-medium text-primary">
+                      <ExternalLink className="h-3 w-3" />
+                      Webhook URL
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <code className="flex-1 truncate text-[10px] text-muted-foreground">
+                        {getInboundWebhookUrl(c.alias, c.config)}
+                      </code>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(getInboundWebhookUrl(c.alias, c.config) || '');
+                          toast({ title: '已复制', description: 'Webhook URL 已复制到剪贴板', variant: 'success' });
+                        }}
+                        className="shrink-0 rounded p-1 hover:bg-primary/10"
+                        title="复制 URL"
+                      >
+                        <Copy className="h-3 w-3 text-primary" />
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="truncate text-xs text-muted-foreground">
-                  {c.webhookUrl || '(无 webhook)'}
+                  {getEndpointPreview(c)}
                 </div>
                 <div className="text-[10px] text-muted-foreground">
                   更新于 {timeAgo(c.updatedAt)}
@@ -191,6 +243,30 @@ export default function ChannelsPage() {
   );
 }
 
+/** 获取渠道的连接地址预览。 */
+function getEndpointPreview(c: Channel): string {
+  const type = displayType(c.type);
+  if (type === 'WEBHOOK') return c.webhookUrl || '(仅接收推送)';
+  try {
+    const cfg = JSON.parse(c.config || '{}');
+    if (type === 'WS') return cfg.ws_url || '(未配置)';
+    if (type === 'WS_SERVER') return `ws://0.0.0.0:${cfg.port || '?'}` + (cfg.ws_token ? '?token=***' : '');
+    if (type === 'ONEBOT_V11_WS_SERVER') return `反向WS :${cfg.port || '?'} → ${cfg.message_type || 'private'}:${cfg.target_id || '?'}`;
+    if (type === 'ONEBOT_V12_WS_SERVER') return `反向WS :${cfg.port || '?'} → ${cfg.detail_type || 'private'}:${cfg.target_id || '?'}`;
+    if (type === 'HTTP_SERVER') return `http://0.0.0.0:${cfg.port || '?'}${cfg.path_prefix || '/'}`;
+    if (type === 'HTTP_SSE_SERVER') return `SSE http://0.0.0.0:${cfg.port || '?'}${cfg.path_prefix || '/'} → /stream`;
+    if (type === 'HTTP_CLIENT') return `${cfg.method || 'POST'} ${cfg.url_template || '(未配置)'}`;
+    if (type === 'SATORI') return cfg.api_url || '(未配置)';
+    return cfg.endpoint || c.webhookUrl || '(未配置)';
+  } catch {
+    return '(配置格式错误)';
+  }
+}
+
+// ===========================================================================
+// 渠道对话框 — 两步流程：1.选择类型 → 2.填写配置
+// ===========================================================================
+
 function ChannelDialog({
   open,
   channel,
@@ -203,194 +279,380 @@ function ChannelDialog({
   onSaved: () => void;
 }) {
   const { toast } = useToast();
-  const [form, setForm] = React.useState({
-    alias: '',
-    name: '',
-    description: '',
-    type: 'HTTP',
-    webhookUrl: '',
-    apiKey: '',
-    config: '{}',
-    enabled: true,
-    isDefault: false,
-  });
+  // step: 'select' = 选择类型, 'form' = 填写表单
+  const [step, setStep] = React.useState<'select' | 'form'>('select');
+  const [selectedType, setSelectedType] = React.useState<string>('WEBHOOK');
+
+  // 通用字段
+  const [alias, setAlias] = React.useState('');
+  const [name, setName] = React.useState('');
+  const [description, setDescription] = React.useState('');
+  const [enabled, setEnabled] = React.useState(true);
+  const [isDefault, setIsDefault] = React.useState(false);
+  // 类型相关配置值
+  const [configValues, setConfigValues] = React.useState<Record<string, string>>({});
   const [saving, setSaving] = React.useState(false);
 
+  // 打开对话框时初始化状态
   React.useEffect(() => {
+    if (!open) return;
     if (channel) {
-      setForm({
-        alias: channel.alias,
-        name: channel.name,
-        description: channel.description,
-        type: channel.type,
-        webhookUrl: channel.webhookUrl,
-        apiKey: channel.apiKey,
-        config: channel.config,
-        enabled: channel.enabled,
-        isDefault: channel.isDefault,
-      });
+      // 编辑模式：跳过类型选择
+      const type = displayType(channel.type);
+      setSelectedType(type);
+      const def = CHANNEL_TYPE_MAP[type];
+      const values = readConfig(
+        channel.config,
+        def?.fields ?? [],
+        { webhookUrl: channel.webhookUrl, apiKey: channel.apiKey },
+      );
+      setConfigValues(values);
+      setAlias(channel.alias);
+      setName(channel.name);
+      setDescription(channel.description);
+      setEnabled(channel.enabled);
+      setIsDefault(channel.isDefault);
+      setStep('form');
     } else {
-      setForm({
-        alias: '',
-        name: '',
-        description: '',
-        type: 'HTTP',
-        webhookUrl: '',
-        apiKey: '',
-        config: '{}',
-        enabled: true,
-        isDefault: false,
-      });
+      // 创建模式：从类型选择开始
+      setStep('select');
+      setSelectedType('WEBHOOK');
+      setAlias('');
+      setName('');
+      setDescription('');
+      setEnabled(true);
+      setIsDefault(false);
+      setConfigValues({});
     }
-  }, [channel]);
+  }, [open, channel]);
+
+  // 选择类型后初始化该类型的默认值
+  const onSelectType = (type: string) => {
+    setSelectedType(type);
+    const def = CHANNEL_TYPE_MAP[type];
+    const defaults: Record<string, string> = {};
+    for (const f of def?.fields ?? []) {
+      if (f.default != null) defaults[f.key] = String(f.default);
+      else defaults[f.key] = '';
+    }
+    setConfigValues(defaults);
+    setStep('form');
+  };
 
   const onSubmit = async () => {
+    // 校验必填
+    const def = CHANNEL_TYPE_MAP[selectedType];
+    if (def) {
+      for (const f of def.fields) {
+        if (f.required && !configValues[f.key]) {
+          toast({ title: '请填写必填字段', description: `${f.label} 不能为空`, variant: 'error' });
+          return;
+        }
+      }
+    }
+    if (!alias || alias.length < 2) {
+      toast({ title: '请填写别名', description: '别名至少 2 个字符', variant: 'error' });
+      return;
+    }
+    if (!name) {
+      toast({ title: '请填写名称', variant: 'error' });
+      return;
+    }
+
     setSaving(true);
     try {
+      const { config, webhookUrl, apiKey } = writeConfig(selectedType, configValues);
+      const body = {
+        alias,
+        name,
+        description,
+        type: selectedType,
+        webhookUrl,
+        apiKey,
+        config,
+        enabled,
+        isDefault,
+      };
       if (channel) {
-        await api(`/api/channels/${channel.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify(form),
-        });
+        await api(`/api/channels/${channel.id}`, { method: 'PATCH', body: JSON.stringify(body) });
         toast({ title: '已更新', variant: 'success' });
       } else {
-        await api('/api/channels', {
-          method: 'POST',
-          body: JSON.stringify(form),
-        });
+        await api('/api/channels', { method: 'POST', body: JSON.stringify(body) });
         toast({ title: '已创建', variant: 'success' });
       }
       onSaved();
     } catch (err) {
-      toast({
-        title: '保存失败',
-        description: (err as Error).message,
-        variant: 'error',
-      });
+      toast({ title: '保存失败', description: (err as Error).message, variant: 'error' });
     } finally {
       setSaving(false);
     }
   };
 
+  const def = CHANNEL_TYPE_MAP[selectedType];
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      title={channel ? '编辑渠道' : '绑定新渠道'}
-      description="上游渠道可以是任意支持 HTTP webhook 的微信机器人 / 服务"
+      title={channel ? '编辑渠道' : '添加渠道'}
+      description={
+        step === 'select'
+          ? '选择渠道类型，不同类型对应不同的上游协议'
+          : `${def?.icon || ''} ${def?.label || ''} — ${def?.description || ''}`
+      }
       className="max-w-2xl"
     >
-      <div className="grid gap-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="alias">别名 *</Label>
-            <Input
-              id="alias"
-              value={form.alias}
-              disabled={!!channel}
-              placeholder="gpt4"
-              onChange={(e) => setForm({ ...form, alias: e.target.value })}
-            />
-            <p className="text-[10px] text-muted-foreground">
-              用于 !switch 命令，仅允许字母/数字/下划线/连字符
-            </p>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="name">名称 *</Label>
-            <Input
-              id="name"
-              value={form.name}
-              placeholder="GPT-4 Turbo"
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="desc">描述</Label>
-          <Input
-            id="desc"
-            value={form.description}
-            placeholder="OpenAI GPT-4 Turbo 上游"
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="webhook">Webhook URL</Label>
-          <Input
-            id="webhook"
-            value={form.webhookUrl}
-            placeholder="https://upstream.example.com/ilink"
-            onChange={(e) => setForm({ ...form, webhookUrl: e.target.value })}
-          />
-          <p className="text-[10px] text-muted-foreground">
-            路由会 POST 消息到此 URL，期望返回 JSON <code>{'{ reply: "..." }'}</code>
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="type">类型</Label>
-            <select
-              id="type"
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+      {step === 'select' ? (
+        /* ===== Step 1: 选择渠道类型 ===== */
+        <div className="grid gap-3 sm:grid-cols-2">
+          {CHANNEL_TYPES.map((t) => (
+            <button
+              key={t.type}
+              onClick={() => onSelectType(t.type)}
+              className="group flex flex-col items-start gap-1 rounded-lg border border-border bg-card p-4 text-left transition-all hover:border-primary hover:bg-primary/5 hover:shadow-md"
             >
-              <option value="HTTP">HTTP</option>
-              <option value="WECHATY">WECHATY</option>
-              <option value="CUSTOM">CUSTOM</option>
-            </select>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{t.icon}</span>
+                <span className="font-semibold">{t.label}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">{t.description}</p>
+              {t.qrBindable && (
+                <Badge variant="outline" className="mt-1 text-[10px]">
+                  支持扫码绑定
+                </Badge>
+              )}
+            </button>
+          ))}
+        </div>
+      ) : (
+        /* ===== Step 2: 填写表单 ===== */
+        <div className="grid gap-4">
+          {/* 返回类型选择（仅创建模式） */}
+          {!channel && (
+            <button
+              onClick={() => setStep('select')}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              返回选择类型
+            </button>
+          )}
+
+          {/* 扫码绑定（仅 WEBHOOK 类型 + 创建模式） */}
+          {!channel && def?.qrBindable && (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+              <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+                <Star className="h-4 w-4 text-primary" />
+                扫码绑定上游
+                <span className="text-[10px] font-normal text-muted-foreground">
+                  （可选）扫上游二维码后自动填充
+                </span>
+              </div>
+              <QrDropzone
+                onParsed={(parsed: ParsedQr) => {
+                  const token = parsed.qrcode || '';
+                  setConfigValues((prev) => ({
+                    ...prev,
+                    api_key: token,
+                  }));
+                  setAlias((prev) =>
+                    prev ||
+                    (parsed.pathSegment || token.slice(0, 8)).replace(/[^a-zA-Z0-9_-]/g, ''),
+                  );
+                  setName((prev) => prev || `上游-${token.slice(0, 6)}`);
+                  toast({
+                    title: '已解析上游二维码',
+                    description: `token: ${token.slice(0, 8)}…  bot_type=${parsed.botType ?? 3}`,
+                    variant: 'success',
+                  });
+                }}
+              />
+            </div>
+          )}
+
+          {/* 通用字段 */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="alias">别名 *</Label>
+              <Input
+                id="alias"
+                value={alias}
+                disabled={!!channel}
+                placeholder="gpt4"
+                onChange={(e) => setAlias(e.target.value)}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                用于 !switch 命令，仅允许字母/数字/下划线/连字符
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="name">名称 *</Label>
+              <Input
+                id="name"
+                value={name}
+                placeholder="GPT-4 Turbo"
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
           </div>
+
           <div className="space-y-1.5">
-            <Label htmlFor="key">API Key</Label>
+            <Label htmlFor="desc">描述</Label>
             <Input
-              id="key"
-              value={form.apiKey}
+              id="desc"
+              value={description}
               placeholder="可选"
-              onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
+              onChange={(e) => setDescription(e.target.value)}
             />
           </div>
-        </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="config">扩展配置 (JSON)</Label>
-          <Textarea
-            id="config"
-            value={form.config}
-            placeholder='{"headers": {}}'
-            rows={3}
-            onChange={(e) => setForm({ ...form, config: e.target.value })}
-          />
-        </div>
+          {/* 类型相关配置字段 */}
+          <div className="rounded-lg border border-border bg-muted/30 p-4">
+            <div className="mb-3 flex items-center gap-2 text-sm font-medium">
+              <span className="text-lg">{def?.icon}</span>
+              {def?.label} 配置
+            </div>
 
-        <div className="flex items-center gap-6 pt-2">
-          <label className="flex items-center gap-2 text-sm">
-            <Switch
-              checked={form.enabled}
-              onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
-            />
-            启用
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Switch
-              checked={form.isDefault}
-              onChange={(e) => setForm({ ...form, isDefault: e.target.checked })}
-            />
-            设为默认渠道
-          </label>
-        </div>
+            {/* WEBHOOK 类型：显示生成的 webhook URL（编辑模式 + 已有 token 时） */}
+            {selectedType === 'WEBHOOK' && channel && getInboundWebhookUrl(channel.alias, channel.config) && (
+              <div className="mb-4 rounded-md border border-primary/20 bg-primary/5 p-3">
+                <div className="mb-1.5 flex items-center gap-1 text-xs font-medium text-primary">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  你的 Webhook URL
+                </div>
+                <p className="mb-2 text-[10px] text-muted-foreground">
+                  客户端向此 URL 发送 POST 请求来推送消息/回复给微信用户
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 truncate rounded bg-background px-2 py-1.5 text-[10px]">
+                    {getInboundWebhookUrl(channel.alias, channel.config)}
+                  </code>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(getInboundWebhookUrl(channel.alias, channel.config) || '');
+                      toast({ title: '已复制', description: 'Webhook URL 已复制', variant: 'success' });
+                    }}
+                  >
+                    <Copy className="h-3 w-3" />
+                    复制
+                  </Button>
+                </div>
+                <div className="mt-2 rounded bg-muted/50 p-2 text-[10px] text-muted-foreground">
+                  <div className="mb-1 font-medium">请求示例：</div>
+                  <pre className="overflow-x-auto whitespace-pre-wrap break-all">{`POST ${getInboundWebhookUrl(channel.alias, channel.config)}
+Content-Type: application/json
 
-        <div className="flex justify-end gap-2 pt-4">
-          <Button variant="outline" onClick={onClose} disabled={saving}>
-            取消
-          </Button>
-          <Button onClick={onSubmit} loading={saving}>
-            {channel ? '保存' : '创建'}
-          </Button>
+{
+  "userId": "wxid_xxx",
+  "message": "要发送给微信用户的消息"
+}`}</pre>
+                </div>
+              </div>
+            )}
+
+            {/* WEBHOOK 类型：创建模式提示 */}
+            {selectedType === 'WEBHOOK' && !channel && (
+              <div className="mb-4 rounded-md border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+                <span className="font-medium text-primary">📌 创建后将自动生成专属 Webhook URL</span>
+                <br />
+                客户端可通过该 URL 向微信用户推送消息/回复
+              </div>
+            )}
+
+            <div className="grid gap-4">
+              {(def?.fields ?? []).map((f) => (
+                <ConfigFieldInput
+                  key={f.key}
+                  field={f}
+                  value={configValues[f.key] || ''}
+                  onChange={(v) => setConfigValues((prev) => ({ ...prev, [f.key]: v }))}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* 开关 */}
+          <div className="flex items-center gap-6 pt-2">
+            <label className="flex items-center gap-2 text-sm">
+              <Switch checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+              启用
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <Switch checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} />
+              设为默认渠道
+            </label>
+          </div>
+
+          {/* 操作按钮 */}
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={onClose} disabled={saving}>
+              取消
+            </Button>
+            <Button onClick={onSubmit} loading={saving}>
+              {channel ? '保存' : '创建'}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </Dialog>
+  );
+}
+
+// ===========================================================================
+// 单个配置字段渲染
+// ===========================================================================
+
+function ConfigFieldInput({
+  field,
+  value,
+  onChange,
+}: {
+  field: ConfigField;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={`cfg-${field.key}`}>
+        {field.label}
+        {field.required && <span className="ml-1 text-destructive">*</span>}
+      </Label>
+      {field.type === 'select' ? (
+        <select
+          id={`cfg-${field.key}`}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          {field.options?.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      ) : field.type === 'textarea' ? (
+        <Textarea
+          id={`cfg-${field.key}`}
+          value={value}
+          placeholder={field.placeholder}
+          rows={3}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      ) : (
+        <Input
+          id={`cfg-${field.key}`}
+          type={field.type === 'password' ? 'password' : field.type === 'number' ? 'number' : 'text'}
+          value={value}
+          placeholder={field.placeholder}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )}
+      {field.help && (
+        <p className="text-[10px] text-muted-foreground">{field.help}</p>
+      )}
+    </div>
   );
 }
