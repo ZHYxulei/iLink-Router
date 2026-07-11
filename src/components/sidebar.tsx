@@ -11,13 +11,17 @@ import {
   BookText,
   Settings,
   Github,
+  Terminal,
+  MessageSquare,
 } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: '仪表盘', icon: LayoutDashboard },
   { href: '/channels', label: '渠道', icon: Plug },
   { href: '/sessions', label: '会话', icon: Users },
+  { href: '/chat', label: '聊天', icon: MessageSquare },
   { href: '/messages', label: '消息日志', icon: BookText },
+  { href: '/debug', label: 'API 调试', icon: Terminal },
   { href: '/router', label: '路由控制', icon: Radio },
   { href: '/settings', label: '设置', icon: Settings },
 ];
