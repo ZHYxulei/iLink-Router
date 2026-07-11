@@ -2,7 +2,7 @@
  * Shared domain types for the router.
  */
 
-export type ChannelType = 'HTTP' | 'WECHATY' | 'CUSTOM';
+export type ChannelType = 'WEBHOOK' | 'HTTP_CLIENT' | 'HTTP_SERVER' | 'HTTP_SSE_SERVER' | 'ONEBOT_V11' | 'ONEBOT_V12' | 'SATORI' | 'WS' | 'WS_SERVER' | 'ONEBOT_V11_WS_SERVER' | 'ONEBOT_V12_WS_SERVER';
 
 export type RouterStatus = 'offline' | 'starting' | 'ready' | 'error';
 export type LoginStatus = 'logged_out' | 'scanning' | 'logged_in' | 'error';
