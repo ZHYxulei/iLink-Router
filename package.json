@@ -5,6 +5,7 @@
   "description": "iLink-Router — WeChat Clawbot router with multi-upstream binding, scan-to-login, and session switching. Built on the native iLink protocol via @wechatbot/wechatbot.",
   "scripts": {
     "dev": "next dev",
+    "dev:turbo": "next dev --turbo",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
@@ -18,6 +19,7 @@
     "@prisma/client": "^5.22.0",
     "@wechatbot/wechatbot": "^2.1.1",
     "clsx": "^2.1.1",
+    "jsqr": "^1.4.0",
     "lucide-react": "^0.460.0",
     "nanoid": "^5.0.7",
     "next": "14.2.18",
@@ -26,6 +28,7 @@
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
+    "ws": "^8.21.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -33,6 +36,7 @@
     "@types/qrcode": "^1.5.5",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/ws": "^8.5.13",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.18",

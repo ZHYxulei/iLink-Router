@@ -116,3 +116,16 @@ model RouterState {
   startedAt     DateTime?
   updatedAt     DateTime  @updatedAt
 }
+
+// -----------------------------------------------------------------------------
+// Application settings — key/value store for runtime-configurable options
+// -----------------------------------------------------------------------------
+model AppSetting {
+  key         String   @id
+  // JSON-encoded value (string / number / boolean / object)
+  value       String
+  // "string" | "boolean" | "number" | "json"  (informational, for UI rendering)
+  type        String   @default("string")
+  description String   @default("")
+  updatedAt   DateTime @updatedAt
+}
