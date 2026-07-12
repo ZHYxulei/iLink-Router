@@ -1,15 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input, Textarea } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
+import { Surface, Badge, Button, Input, InputArea, Switch } from '@cloudflare/kumo';
 import { useToast } from '@/components/ui/toaster';
 import { api } from '@/lib/api-client';
 import { formatTime } from '@/lib/utils';
-import { Plus, Send, RefreshCw, MessageSquare, Radio, Users } from 'lucide-react';
+import { Plus, PaperPlaneTilt, ArrowsClockwise, ChatCircle, Broadcast, Users } from '@phosphor-icons/react';
 
 interface SessionItem {
   id: string;
@@ -157,27 +153,29 @@ export default function ChatPage() {
     }
   };
 
-  if (loading) return <div className="text-sm text-muted-foreground">加载中...</div>;
+  if (loading) return <div className="text-sm text-kumo-subtle">加载中...</div>;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">聊天</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-kumo-strong">聊天</h1>
+          <p className="mt-1 text-sm text-kumo-subtle">
             模拟微信消息发送，与微信聊天记录保持同步。开启双向模式可模拟渠道回复
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-sm">
-            <Switch
-              checked={bidirectional}
-              onChange={(e) => setBidirectional(e.target.checked)}
-            />
-            <span className="text-muted-foreground">双向模式</span>
-          </label>
-          <Button variant="outline" size="sm" onClick={refreshSessions}>
-            <RefreshCw className="h-3 w-3" />
+          <Switch
+            checked={bidirectional}
+            onCheckedChange={setBidirectional}
+            label="双向模式"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<ArrowsClockwise weight="duotone" className="h-3 w-3" />}
+            onClick={refreshSessions}
+          >
             刷新
           </Button>
         </div>
@@ -185,32 +183,37 @@ export default function ChatPage() {
 
       <div className="grid gap-4 md:grid-cols-[280px_1fr]">
         {/* 会话列表 */}
-        <Card className="h-[calc(100vh-220px)] overflow-hidden">
-          <CardContent className="flex h-full flex-col p-0">
-            <div className="flex items-center justify-between border-b border-border p-3">
-              <span className="flex items-center gap-1.5 text-xs font-semibold">
-                <Users className="h-3.5 w-3.5" />
+        <Surface className="h-[calc(100vh-220px)] overflow-hidden rounded-xl border border-kumo-line">
+          <div className="flex h-full flex-col">
+            <div className="flex items-center justify-between border-b border-kumo-line p-3">
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-kumo-default">
+                <Users weight="duotone" className="h-3.5 w-3.5" />
                 会话列表
               </span>
-              <Button size="sm" variant="outline" onClick={createTestSession} className="h-7 px-2">
-                <Plus className="h-3 w-3" />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={createTestSession}
+                className="h-7 px-2"
+                icon={<Plus weight="duotone" className="h-3 w-3" />}
+              >
                 新建测试
               </Button>
             </div>
             <div className="flex-1 overflow-auto">
               {sessions.length === 0 ? (
-                <p className="p-4 text-center text-xs text-muted-foreground">暂无会话</p>
+                <p className="p-4 text-center text-xs text-kumo-subtle">暂无会话</p>
               ) : (
                 sessions.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => setSelectedId(s.id)}
-                    className={`flex w-full flex-col gap-1 border-b border-border/50 px-3 py-2.5 text-left transition-colors ${
-                      selectedId === s.id ? 'bg-primary/10' : 'hover:bg-muted/50'
+                    className={`flex w-full flex-col gap-1 border-b border-kumo-line/50 px-3 py-2.5 text-left transition-colors ${
+                      selectedId === s.id ? 'bg-kumo-brand-tint' : 'hover:bg-kumo-tint'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-medium">
+                      <span className="truncate text-sm font-medium text-kumo-strong">
                         {s.wxName || '(未命名)'}
                       </span>
                       {s.channel && (
@@ -219,7 +222,7 @@ export default function ChatPage() {
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                    <div className="flex items-center justify-between text-[10px] text-kumo-subtle">
                       <code className="truncate">{s.wxId}</code>
                       <span>{formatTime(s.lastActiveAt)}</span>
                     </div>
@@ -227,21 +230,25 @@ export default function ChatPage() {
                 ))
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </Surface>
 
         {/* 聊天视图 */}
-        <Card className="h-[calc(100vh-220px)] overflow-hidden">
-          <CardContent className="flex h-full flex-col p-0">
+        <Surface className="h-[calc(100vh-220px)] overflow-hidden rounded-xl border border-kumo-line">
+          <div className="flex h-full flex-col">
             {!chatData ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-                <MessageSquare className="h-12 w-12 text-muted-foreground/40" />
-                <div className="text-sm text-muted-foreground">
+                <ChatCircle weight="duotone" className="h-12 w-12 text-kumo-subtle/40" />
+                <div className="text-sm text-kumo-subtle">
                   {selectedId ? '加载中...' : '从左侧选择一个会话开始聊天'}
                 </div>
                 {!selectedId && (
-                  <Button variant="outline" size="sm" onClick={createTestSession}>
-                    <Plus className="h-3 w-3" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={createTestSession}
+                    icon={<Plus weight="duotone" className="h-3 w-3" />}
+                  >
                     新建测试会话
                   </Button>
                 )}
@@ -249,19 +256,19 @@ export default function ChatPage() {
             ) : (
               <>
                 {/* 会话头部 */}
-                <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+                <div className="flex items-center justify-between border-b border-kumo-line px-4 py-2.5">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-semibold">
+                      <span className="truncate text-sm font-semibold text-kumo-strong">
                         {chatData.session.wxName || '(未命名)'}
                       </span>
                       {chatData.session.channel && (
-                        <Badge variant="default" className="text-[9px]">
+                        <Badge variant="primary" className="text-[9px]">
                           {chatData.session.channel.name}
                         </Badge>
                       )}
                     </div>
-                    <code className="text-[10px] text-muted-foreground">
+                    <code className="text-[10px] text-kumo-subtle">
                       {chatData.session.wxId}
                     </code>
                   </div>
@@ -273,7 +280,7 @@ export default function ChatPage() {
                 {/* 消息列表 */}
                 <div className="flex-1 space-y-3 overflow-auto p-4">
                   {chatData.messages.length === 0 ? (
-                    <p className="py-12 text-center text-sm text-muted-foreground">
+                    <p className="py-12 text-center text-sm text-kumo-subtle">
                       暂无消息记录，在下方输入消息开始对话
                     </p>
                   ) : (
@@ -285,12 +292,12 @@ export default function ChatPage() {
                         <div
                           className={`max-w-[75%] rounded-2xl px-4 py-2 ${
                             m.direction === 'IN'
-                              ? 'bg-muted text-foreground'
+                              ? 'bg-kumo-recessed text-kumo-default'
                               : m.kind === 'system'
-                                ? 'bg-amber-100 text-amber-900'
+                                ? 'bg-kumo-warning-tint text-kumo-warning'
                                 : m.kind === 'command'
-                                  ? 'bg-primary/10 text-primary'
-                                  : 'bg-primary text-primary-foreground'
+                                  ? 'bg-kumo-brand-tint text-kumo-brand'
+                                  : 'bg-kumo-brand text-white'
                           }`}
                         >
                           <div className="mb-1 flex items-center gap-2 text-[10px] opacity-70">
@@ -305,7 +312,7 @@ export default function ChatPage() {
                             {m.text}
                           </div>
                           {m.error && (
-                            <div className="mt-1 text-xs text-red-300">⚠ {m.error}</div>
+                            <div className="mt-1 text-xs text-kumo-danger">⚠ {m.error}</div>
                           )}
                         </div>
                       </div>
@@ -315,12 +322,12 @@ export default function ChatPage() {
                 </div>
 
                 {/* 输入区 */}
-                <div className="space-y-2 border-t border-border p-3">
+                <div className="space-y-2 border-t border-kumo-line p-3">
                   {/* 模拟渠道回复（双向模式） */}
                   {bidirectional && (
-                    <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 p-2 dark:border-amber-900 dark:bg-amber-950/30">
-                      <Radio className="h-4 w-4 shrink-0 text-amber-600" />
-                      <Textarea
+                    <div className="flex items-center gap-2 rounded-md border border-kumo-warning/30 bg-kumo-warning-tint p-2">
+                      <Broadcast weight="duotone" className="h-4 w-4 shrink-0 text-kumo-warning" />
+                      <InputArea
                         value={replyInput}
                         onChange={(e) => setReplyInput(e.target.value)}
                         placeholder="模拟渠道回复（将真实发送到微信用户）"
@@ -336,8 +343,8 @@ export default function ChatPage() {
                         size="sm"
                         onClick={sendAsChannelReply}
                         disabled={sending || !replyInput.trim()}
+                        icon={<PaperPlaneTilt weight="duotone" className="h-3 w-3" />}
                       >
-                        <Send className="h-3 w-3" />
                         回复
                       </Button>
                     </div>
@@ -356,12 +363,17 @@ export default function ChatPage() {
                         }
                       }}
                     />
-                    <Button onClick={sendAsUser} disabled={sending || !input.trim()}>
-                      <Send className="h-4 w-4" />
-                      {sending ? '...' : '发送'}
+                    <Button
+                      variant="primary"
+                      onClick={sendAsUser}
+                      disabled={sending || !input.trim()}
+                      loading={sending}
+                      icon={PaperPlaneTilt}
+                    >
+                      发送
                     </Button>
                   </div>
-                  <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                  <div className="flex items-center justify-between text-[10px] text-kumo-subtle">
                     <span>
                       {bidirectional
                         ? '双向模式：可模拟用户发送 + 渠道回复（渠道回复会真实发送到微信）'
@@ -372,8 +384,8 @@ export default function ChatPage() {
                 </div>
               </>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </Surface>
       </div>
     </div>
   );

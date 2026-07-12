@@ -1,13 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Surface, Badge, Button } from '@cloudflare/kumo';
 import { useToast } from '@/components/ui/toaster';
 import { api } from '@/lib/api-client';
 import { formatTime, timeAgo } from '@/lib/utils';
-import { Power, RefreshCw, Square, QrCode, CheckCircle2, AlertCircle, Loader2, Radio, Info } from 'lucide-react';
+import { Power, ArrowsClockwise, Square, QrCode, CheckCircle, WarningCircle, CircleNotch, Broadcast, Info } from '@phosphor-icons/react';
 
 interface RouterStatus {
   status: string;
@@ -88,97 +86,91 @@ export default function RouterPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold tracking-tight">路由控制</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-3xl font-semibold tracking-tight text-kumo-strong">路由控制</h1>
+        <p className="text-sm text-kumo-subtle">
           启动路由并使用手机微信扫码绑定。扫码后路由将自动登录微信账号，作为消息路由入口。
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* QR Card */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <QrCode className="h-5 w-5 text-primary" />
-                  扫码绑定
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  使用手机微信扫描下方二维码登录路由账号
-                </CardDescription>
+        <Surface className="rounded-xl border border-kumo-line p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-kumo-strong">
+                <QrCode weight="duotone" className="h-5 w-5 text-kumo-brand" />
+                扫码绑定
+              </h3>
+              <p className="mt-1 text-sm text-kumo-subtle">
+                使用手机微信扫描下方二维码登录路由账号
+              </p>
+            </div>
+            {isLoggedIn ? (
+              <Badge variant="success">已登录</Badge>
+            ) : status?.loginStatus === 'scanning' ? (
+              <Badge variant="warning">等待扫码</Badge>
+            ) : (
+              <Badge variant="secondary">未登录</Badge>
+            )}
+          </div>
+          <div className="mt-4 flex flex-col items-center justify-center gap-4 py-6">
+            {isLoggedIn ? (
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-kumo-success-tint">
+                  <CheckCircle weight="duotone" className="h-16 w-16 text-kumo-success" />
+                </div>
+                <div>
+                  <div className="text-lg font-semibold text-kumo-strong">{status?.selfWxName || '已登录'}</div>
+                  <div className="text-xs text-kumo-subtle">
+                    {status?.selfWxId}
+                  </div>
+                </div>
               </div>
-              {isLoggedIn ? (
-                <Badge variant="success">已登录</Badge>
-              ) : status?.loginStatus === 'scanning' ? (
-                <Badge variant="warning">等待扫码</Badge>
-              ) : (
-                <Badge variant="secondary">未登录</Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center gap-4 py-6">
-              {isLoggedIn ? (
-                <div className="flex flex-col items-center gap-3 text-center">
-                  <div className="flex h-32 w-32 items-center justify-center rounded-full bg-emerald-100">
-                    <CheckCircle2 className="h-16 w-16 text-emerald-600" />
-                  </div>
-                  <div>
-                    <div className="text-lg font-semibold">{status?.selfWxName || '已登录'}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {status?.selfWxId}
-                    </div>
-                  </div>
+            ) : qr?.qr ? (
+              <div className="flex flex-col items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={qr.qr}
+                  alt="WeChat login QR"
+                  className="h-72 w-72 rounded-lg border border-kumo-line bg-white p-2"
+                />
+                <p className="text-xs text-kumo-subtle">
+                  二维码更新于 {timeAgo(qr.lastQrAt)}
+                </p>
+              </div>
+            ) : !isRunning ? (
+              <div className="flex flex-col items-center gap-3 text-kumo-subtle">
+                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-kumo-warning-tint">
+                  <Info weight="duotone" className="h-14 w-14 text-kumo-warning" />
                 </div>
-              ) : qr?.qr ? (
-                <div className="flex flex-col items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={qr.qr}
-                    alt="WeChat login QR"
-                    className="h-72 w-72 rounded-lg border border-border bg-white p-2"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    二维码更新于 {timeAgo(qr.lastQrAt)}
-                  </p>
+                <p className="text-sm font-medium text-kumo-warning">
+                  路由未启动，无法显示二维码
+                </p>
+                <p className="text-xs text-kumo-subtle">
+                  请先点击下方「启动路由」按钮
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3 text-kumo-subtle">
+                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-kumo-recessed">
+                  <CircleNotch weight="duotone" className="h-12 w-12 animate-spin" />
                 </div>
-              ) : !isRunning ? (
-                <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                  <div className="flex h-32 w-32 items-center justify-center rounded-full bg-amber-50">
-                    <Info className="h-14 w-14 text-amber-500" />
-                  </div>
-                  <p className="text-sm font-medium text-amber-600">
-                    路由未启动，无法显示二维码
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    请先点击下方「启动路由」按钮
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                  <div className="flex h-32 w-32 items-center justify-center rounded-full bg-muted">
-                    <Loader2 className="h-12 w-12 animate-spin" />
-                  </div>
-                  <p className="text-sm">
-                    正在生成二维码...
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                <p className="text-sm">
+                  正在生成二维码...
+                </p>
+              </div>
+            )}
+          </div>
+        </Surface>
 
         {/* Status Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Radio className="h-5 w-5 text-primary" />
-              路由状态
-            </CardTitle>
-            <CardDescription>当前路由运行状态</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <Surface className="rounded-xl border border-kumo-line p-5">
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-kumo-strong">
+            <Broadcast weight="duotone" className="h-5 w-5 text-kumo-brand" />
+            路由状态
+          </h3>
+          <p className="text-sm text-kumo-subtle">当前路由运行状态</p>
+          <div className="mt-4 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <StatItem label="运行状态">
                 <Badge
@@ -188,7 +180,7 @@ export default function RouterPage() {
                       : status?.status === 'starting'
                         ? 'warning'
                         : status?.status === 'error'
-                          ? 'destructive'
+                          ? 'error'
                           : 'secondary'
                   }
                 >
@@ -209,18 +201,18 @@ export default function RouterPage() {
                 </Badge>
               </StatItem>
               <StatItem label="运行时间">
-                <span className="font-mono text-sm">{formatUptime(status?.uptimeSeconds || 0)}</span>
+                <span className="font-mono text-sm text-kumo-default">{formatUptime(status?.uptimeSeconds || 0)}</span>
               </StatItem>
               <StatItem label="启动时间">
-                <span className="font-mono text-xs">
+                <span className="font-mono text-xs text-kumo-default">
                   {status?.startedAt ? formatTime(status.startedAt) : '-'}
                 </span>
               </StatItem>
             </div>
 
             {status?.lastError && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="flex items-start gap-2 rounded-lg border border-kumo-danger bg-kumo-danger-tint p-3 text-sm text-kumo-danger">
+                <WarningCircle weight="duotone" className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="min-w-0">
                   <div className="font-semibold">最近错误</div>
                   <div className="break-all text-xs">{status.lastError}</div>
@@ -233,18 +225,19 @@ export default function RouterPage() {
                 onClick={() => doAction('start')}
                 disabled={isRunning && !status?.lastError}
                 loading={busy === 'start'}
-                variant={isRunning && !status?.lastError ? 'secondary' : 'default'}
+                variant={isRunning && !status?.lastError ? 'secondary' : 'primary'}
+                icon={Power}
               >
-                <Power className="h-4 w-4" />
                 启动路由
               </Button>
               <Button
                 onClick={() => doAction('reset')}
                 disabled={!isRunning && !status?.lastError}
                 loading={busy === 'reset'}
-                variant="warning"
+                variant="secondary"
+                className="text-kumo-warning"
+                icon={ArrowsClockwise}
               >
-                <RefreshCw className="h-4 w-4" />
                 重置登录
               </Button>
               <Button
@@ -252,8 +245,8 @@ export default function RouterPage() {
                 disabled={!isRunning}
                 loading={busy === 'stop'}
                 variant="destructive"
+                icon={Square}
               >
-                <Square className="h-4 w-4" />
                 停止
               </Button>
               <Button
@@ -262,44 +255,40 @@ export default function RouterPage() {
                 loading={busy === 'restart'}
                 variant="outline"
                 title="停掉当前 bot 并用新代码重建，无需重新扫码（开发热重载用）"
+                icon={ArrowsClockwise}
               >
-                <RefreshCw className="h-4 w-4" />
                 重启路由
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </Surface>
       </div>
 
       {/* Commands reference */}
-      <Card>
-        <CardHeader>
-          <CardTitle>支持的命令</CardTitle>
-          <CardDescription>用户向路由发送这些命令即可触发对应功能</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-2">
-            {[
-              { cmd: '!ping', desc: '检查路由是否在线，路由回复「pong!」' },
-              { cmd: '!switch <别名>', desc: '将当前会话切换到指定上游渠道' },
-              { cmd: '!info', desc: '显示当前渠道、对话数等会话信息' },
-              { cmd: '!status', desc: '查询路由系统状态和各渠道健康' },
-              { cmd: '!channels', desc: '列出所有可用上游渠道' },
-              { cmd: '!help', desc: '显示命令帮助' },
-            ].map((c) => (
-              <div
-                key={c.cmd}
-                className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3"
-              >
-                <code className="rounded bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-                  {c.cmd}
-                </code>
-                <span className="text-sm text-muted-foreground">{c.desc}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <Surface className="rounded-xl border border-kumo-line p-5">
+        <h3 className="text-lg font-semibold text-kumo-strong">支持的命令</h3>
+        <p className="text-sm text-kumo-subtle">用户向路由发送这些命令即可触发对应功能</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {[
+            { cmd: '!ping', desc: '检查路由是否在线，路由回复「pong!」' },
+            { cmd: '!switch <别名>', desc: '将当前会话切换到指定上游渠道' },
+            { cmd: '!info', desc: '显示当前渠道、对话数等会话信息' },
+            { cmd: '!status', desc: '查询路由系统状态和各渠道健康' },
+            { cmd: '!channels', desc: '列出所有可用上游渠道' },
+            { cmd: '!help', desc: '显示命令帮助' },
+          ].map((c) => (
+            <div
+              key={c.cmd}
+              className="flex items-start gap-3 rounded-lg border border-kumo-line bg-kumo-recessed p-3"
+            >
+              <code className="rounded bg-kumo-brand-tint px-2 py-0.5 text-xs font-bold text-kumo-brand">
+                {c.cmd}
+              </code>
+              <span className="text-sm text-kumo-subtle">{c.desc}</span>
+            </div>
+          ))}
+        </div>
+      </Surface>
     </div>
   );
 }
@@ -307,7 +296,7 @@ export default function RouterPage() {
 function StatItem({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="text-xs uppercase tracking-wider text-kumo-subtle">{label}</span>
       {children}
     </div>
   );
