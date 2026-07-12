@@ -21,9 +21,9 @@ export const runtime = 'nodejs';
  */
 export async function POST(
   req: NextRequest,
-  ctx: { params: { alias: string } },
+  ctx: { params: Promise<{ alias: string }> },
 ) {
-  const alias = ctx.params.alias;
+  const { alias } = await ctx.params;
   const url = new URL(req.url);
   const key = url.searchParams.get('key') || '';
 
@@ -141,9 +141,9 @@ export async function POST(
  */
 export async function GET(
   req: NextRequest,
-  ctx: { params: { alias: string } },
+  ctx: { params: Promise<{ alias: string }> },
 ) {
-  const alias = ctx.params.alias;
+  const { alias } = await ctx.params;
   const url = new URL(req.url);
   const key = url.searchParams.get('key') || '';
 

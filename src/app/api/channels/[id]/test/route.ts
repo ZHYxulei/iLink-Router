@@ -7,7 +7,7 @@ import { requireAdmin } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 /**
  * POST /api/channels/[id]/test — probe or send a test message through a channel.
@@ -24,6 +24,7 @@ const TestBody = z.object({
 export async function POST(req: NextRequest, ctx: Ctx) {
   const unauth = requireAdmin(req);
   if (unauth) return unauth;
+  const { id } = await ctx.params;
 
   const body = await req.json().catch(() => ({}));
   const parsed = TestBody.safeParse(body);
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   }
 
   const channel = await prisma.channel.findUnique({
-    where: { id: ctx.params.id },
+    where: { id },
   });
   if (!channel) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });

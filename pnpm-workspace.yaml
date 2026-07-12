@@ -1,12 +1,16 @@
 allowBuilds:
-  '@prisma/client': set this to true or false
   '@prisma/engines': set this to true or false
   prisma: set this to true or false
+  sharp: set this to true or false
+
+minimumReleaseAgeExclude:
+  - postcss@8.5.17
 
 onlyBuiltDependencies:
   - "@prisma/client"
   - "@prisma/engines"
   - prisma
+  - sharp
   - unrs-resolver
 
 # 关闭运行脚本前的依赖检查，避免 pnpm dev 被 install 阻塞

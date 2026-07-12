@@ -8,6 +8,10 @@
 //   PostgreSQL:    provider = "postgresql"  url = "postgresql://user:pass@host:5432/ilink?schema=public"
 //   MySQL:         provider = "mysql"       url = "mysql://user:pass@host:3306/ilink"
 //
+// NOTE: Prisma 7+ no longer accepts `url` inside `datasource` blocks.
+// The connection URL is configured in `prisma.config.ts` (for migrations) and
+// passed via an adapter to the `PrismaClient` constructor (runtime).
+//
 // Enums are stored as String so the same schema works on all three providers.
 // =============================================================================
 
@@ -17,7 +21,6 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 // -----------------------------------------------------------------------------

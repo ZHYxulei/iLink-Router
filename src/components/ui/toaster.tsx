@@ -34,10 +34,10 @@ export function Toaster() {
             className={cn(
               'pointer-events-auto flex w-80 flex-col gap-1 rounded-lg border p-4 shadow-lg animate-fade-in',
               t.variant === 'error'
-                ? 'border-red-200 bg-red-50 text-red-900'
+                ? 'border-kumo-danger/30 bg-kumo-danger-tint text-kumo-danger'
                 : t.variant === 'success'
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                  : 'border-border bg-card text-foreground',
+                  ? 'border-kumo-success/30 bg-kumo-success-tint text-kumo-success'
+                  : 'border-kumo-line bg-kumo-elevated text-kumo-default',
             )}
           >
             <span className="text-sm font-semibold">{t.title}</span>

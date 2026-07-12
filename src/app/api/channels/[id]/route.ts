@@ -32,14 +32,15 @@ const ChannelUpdate = z.object({
   isDefault: z.boolean().optional(),
 });
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 /** GET /api/channels/[id] — fetch one channel. */
 export async function GET(req: NextRequest, ctx: Ctx) {
   const unauth = requireAdmin(req);
   if (unauth) return unauth;
+  const { id } = await ctx.params;
   const channel = await prisma.channel.findUnique({
-    where: { id: ctx.params.id },
+    where: { id },
   });
   if (!channel) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
@@ -51,6 +52,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 export async function PATCH(req: NextRequest, ctx: Ctx) {
   const unauth = requireAdmin(req);
   if (unauth) return unauth;
+  const { id } = await ctx.params;
 
   const body = await req.json().catch(() => null);
   const parsed = ChannelUpdate.safeParse(body);
@@ -63,7 +65,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const d = parsed.data;
 
   const existing = await prisma.channel.findUnique({
-    where: { id: ctx.params.id },
+    where: { id },
   });
   if (!existing) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
@@ -71,14 +73,14 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   if (d.isDefault) {
     await prisma.channel.updateMany({
-      where: { isDefault: true, NOT: { id: ctx.params.id } },
+      where: { isDefault: true, NOT: { id } },
       data: { isDefault: false },
     });
   }
 
   try {
     const channel = await prisma.channel.update({
-      where: { id: ctx.params.id },
+      where: { id },
       data: d,
     });
     // 如果是 WS 服务端类型，重载
@@ -99,12 +101,13 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 export async function DELETE(req: NextRequest, ctx: Ctx) {
   const unauth = requireAdmin(req);
   if (unauth) return unauth;
+  const { id } = await ctx.params;
   try {
     // 停止可能存在的 WS 服务端
-    await router.unloadWsServer(ctx.params.id).catch(() => {});
+    await router.unloadWsServer(id).catch(() => {});
     // 停止可能存在的 HTTP 服务端
-    await router.unloadHttpServer(ctx.params.id).catch(() => {});
-    await prisma.channel.delete({ where: { id: ctx.params.id } });
+    await router.unloadHttpServer(id).catch(() => {});
+    await prisma.channel.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
     const msg = (err as Error).message;

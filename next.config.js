@@ -5,14 +5,14 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
-    // Server-only Node deps that should NOT be bundled by webpack —
-    // Next.js will require() them at runtime instead.
-    serverComponentsExternalPackages: [
-      '@wechatbot/wechatbot',
-      '@prisma/client',
-      'qrcode',
-    ],
   },
+  // Server-only Node deps that should NOT be bundled by webpack —
+  // Next.js will require() them at runtime instead.
+  serverExternalPackages: [
+    '@wechatbot/wechatbot',
+    '@prisma/client',
+    'qrcode',
+  ],
 };
 
 module.exports = nextConfig;

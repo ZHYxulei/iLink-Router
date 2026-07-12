@@ -5,7 +5,7 @@ import { requireAdmin } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 /**
  * GET /api/sessions/[id] — fetch one session with its recent messages.
@@ -16,12 +16,13 @@ type Ctx = { params: { id: string } };
 export async function GET(req: NextRequest, ctx: Ctx) {
   const unauth = requireAdmin(req);
   if (unauth) return unauth;
+  const { id } = await ctx.params;
 
   const url = req.nextUrl;
   const limit = Math.min(Number(url.searchParams.get('limit') || 100), 500);
 
   const session = await prisma.session.findUnique({
-    where: { id: ctx.params.id },
+    where: { id },
     include: { channel: true },
   });
   if (!session) {
@@ -44,8 +45,9 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 export async function DELETE(req: NextRequest, ctx: Ctx) {
   const unauth = requireAdmin(req);
   if (unauth) return unauth;
+  const { id } = await ctx.params;
   try {
-    await prisma.session.delete({ where: { id: ctx.params.id } });
+    await prisma.session.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
