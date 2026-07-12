@@ -28,28 +28,24 @@
 
 ## 架构
 
-```
- 手机微信                iLink-Router                      上游渠道
- ─────────              ──────────────                    ──────────
- 用户 A ──┐             ┌──────────────────┐
- 用户 B ──┼── 消息 ──►  │ @wechatbot SDK   │
- 用户 C ──┘             │ (iLink 长轮询)    │
-                        │        │         │
-                        │  命令? → 命令处理 │
-                        │  文本? → 会话路由 │
-                        │        │         │
-                        └────────┼─────────┘
-                                 │
-                ┌────────────────┼────────────────┐
-                ▼                ▼                ▼
-          ┌──────────┐    ┌──────────┐    ┌──────────┐
-          │ Webhook  │    │ OneBot   │    │ WS/HTTP  │
-          │ (GPT-4)  │    │ (QQ Bot) │    │ (自定义) │
-          └──────────┘    └──────────┘    └──────────┘
-                 │                │                │
-                 └────────────────┼────────────────┘
-                                  ▼
-                         回复原路返回微信用户
+```mermaid
+graph TD
+    UA[手机微信用户] -->|扫码绑定| SDK["@wechatbot/wechatbot<br/>iLink 长轮询"]
+    SDK -->|消息| CMD{命令?}
+    CMD -->|是| DISPATCH[命令处理<br/>!ping !switch !info ...]
+    CMD -->|否| ROUTE[会话路由<br/>按绑定关系转发]
+
+    ROUTE --> CH1[Webhook<br/>GPT-4 / Claude]
+    ROUTE --> CH2[OneBot v11/v12<br/>QQ Bot]
+    ROUTE --> CH3[WS / HTTP Server<br/>自定义]
+    ROUTE --> CH4[Satori<br/>多平台]
+
+    CH1 --> REPLY{回复}
+    CH2 --> REPLY
+    CH3 --> REPLY
+    CH4 --> REPLY
+    DISPATCH --> REPLY
+    REPLY -->|原路返回| UA
 ```
 
 ## 快速开始
