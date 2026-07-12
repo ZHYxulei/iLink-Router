@@ -565,33 +565,70 @@ class RouterService {
   }
 
   async stop(): Promise<void> {
-    // 取消后台登录循环
+    // 取消后台登录循环标志
     state.loginLoopCancelled = true;
-    if (state.loginLoop) {
-      try { await state.loginLoop; } catch { /* ignore */ }
-      state.loginLoop = null;
-    }
-    // 停止所有 WS 服务端
+
+    if (state.stopping) return state.stopping;
+
+    const botToStop = state.bot;
+
+    // 停止所有 WS / HTTP 服务端（不依赖 bot）
     stopAllWsServers();
     setInboundHandler(null);
-    // 停止所有 HTTP 服务端
     stopAllHttpServers();
     setHttpInboundHandler(null);
-    if (!state.bot) return;
-    if (state.stopping) return state.stopping;
+
+    if (!botToStop) {
+      // 没有 bot，仍需等待可能存在的 loginLoop 退出（短超时）
+      if (state.loginLoop) {
+        try {
+          await Promise.race([
+            state.loginLoop,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('loginLoop timeout')), 2000),
+            ),
+          ]);
+        } catch { /* ignore */ }
+        state.loginLoop = null;
+      }
+      state.status = 'offline';
+      state.loginStatus = 'logged_out';
+      await persistState({ status: 'offline', loginStatus: 'logged_out' });
+      return;
+    }
+
+    // 关键：先调用 bot.stop()，这会让 loginLoop 内的 bot.start() 返回，
+    // 否则 await loginLoop 会死锁（loginLoop 在 bot.start() 里永远不返回）。
     state.stopping = (async () => {
       try {
-        await state.bot!.stop();
-      } finally {
-        state.bot = null;
-        state.status = 'offline';
-        state.loginStatus = 'logged_out';
-        state.stopping = null;
-        await persistState({
-          status: 'offline',
-          loginStatus: 'logged_out',
-        });
+        await Promise.race([
+          botToStop.stop(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('bot.stop() timeout after 8s')), 8000),
+          ),
+        ]);
+      } catch (err) {
+        console.error('[iLink] bot.stop() error (ignored):', (err as Error).message);
       }
+
+      // bot.stop() 返回后，loginLoop 应该很快退出；给它一个短超时兜底
+      if (state.loginLoop) {
+        try {
+          await Promise.race([
+            state.loginLoop,
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('loginLoop cleanup timeout')), 3000),
+            ),
+          ]);
+        } catch { /* ignore */ }
+        state.loginLoop = null;
+      }
+
+      state.bot = null;
+      state.status = 'offline';
+      state.loginStatus = 'logged_out';
+      state.stopping = null;
+      await persistState({ status: 'offline', loginStatus: 'logged_out' });
     })();
     return state.stopping;
   }

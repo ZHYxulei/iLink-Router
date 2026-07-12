@@ -32,6 +32,8 @@ export default function RouterPage() {
   const [status, setStatus] = React.useState<RouterStatus | null>(null);
   const [qr, setQr] = React.useState<QrPayload | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
+  // 客户端 tick，每秒递增以动态刷新运行时间
+  const [, setTick] = React.useState(0);
 
   const refresh = React.useCallback(async () => {
     try {
@@ -48,11 +50,16 @@ export default function RouterPage() {
     }
   }, [toast]);
 
+  // 只在首次挂载时加载一次，不再 3 秒轮询
   React.useEffect(() => {
     refresh();
-    const t = setInterval(refresh, 3000);
-    return () => clearInterval(t);
   }, [refresh]);
+
+  // 客户端每秒 tick，仅用于动态计算运行时间（不发请求）
+  React.useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const doAction = async (action: 'start' | 'stop' | 'reset' | 'restart') => {
     setBusy(action);
@@ -68,7 +75,8 @@ export default function RouterPage() {
         restart: '已重启',
       };
       toast({ title: labels[action] || '操作完成', variant: 'success' });
-      setTimeout(refresh, 500);
+      // 操作完成后刷新一次状态
+      await refresh();
     } catch (err) {
       toast({
         title: '操作失败',
@@ -83,13 +91,28 @@ export default function RouterPage() {
   const isRunning = status?.status === 'ready' || status?.status === 'starting';
   const isLoggedIn = status?.loginStatus === 'logged_in';
 
+  // 动态计算运行时间：基于 uptimeSeconds + 从 status.updatedAt 到现在的增量
+  const liveUptime = React.useMemo(() => {
+    if (!status?.startedAt || !status.uptimeSeconds) return 0;
+    const updatedMs = new Date(status.updatedAt).getTime();
+    const nowMs = Date.now();
+    const delta = Math.max(0, Math.floor((nowMs - updatedMs) / 1000));
+    return status.uptimeSeconds + delta;
+  }, [status, /* tick 触发重算 */ Date.now()]);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-semibold tracking-tight text-kumo-strong">路由控制</h1>
-        <p className="text-sm text-kumo-subtle">
-          启动路由并使用手机微信扫码绑定。扫码后路由将自动登录微信账号，作为消息路由入口。
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-3xl font-semibold tracking-tight text-kumo-strong">路由控制</h1>
+          <p className="text-sm text-kumo-subtle">
+            启动路由并使用手机微信扫码绑定。扫码后路由将自动登录微信账号，作为消息路由入口。
+          </p>
+        </div>
+        <Button variant="ghost" onClick={refresh} disabled={!!busy} className="shrink-0">
+          <ArrowsClockwise className="h-4 w-4" />
+          刷新
+        </Button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -201,7 +224,9 @@ export default function RouterPage() {
                 </Badge>
               </StatItem>
               <StatItem label="运行时间">
-                <span className="font-mono text-sm text-kumo-default">{formatUptime(status?.uptimeSeconds || 0)}</span>
+                <span className="font-mono text-sm text-kumo-default tabular-nums">
+                  {formatUptime(liveUptime)}
+                </span>
               </StatItem>
               <StatItem label="启动时间">
                 <span className="font-mono text-xs text-kumo-default">
@@ -313,5 +338,5 @@ function formatUptime(sec: number): string {
   if (h) parts.push(`${h}时`);
   if (m) parts.push(`${m}分`);
   parts.push(`${s}秒`);
-  return parts.join('');
+  return parts.join(' ');
 }

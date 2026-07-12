@@ -1,9 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaLibSql } from '@prisma/adapter-libsql';
+import type { SqlDriverAdapterFactory } from '@prisma/driver-adapter-utils';
 
 const adapter = new PrismaLibSql({
   url: process.env.DATABASE_URL || 'file:./prisma/dev.db',
-});
+}) as unknown as SqlDriverAdapterFactory;
 
 declare global {
   // eslint-disable-next-line no-var
