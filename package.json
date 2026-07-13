@@ -26,7 +26,7 @@
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
     "jsqr": "^1.4.0",
-    "nanoid": "^5.1.16",
+    "nanoid": "^6.0.0",
     "next": "16.2.10",
     "qrcode": "^1.5.4",
     "react": "^19.2.7",
@@ -44,7 +44,7 @@
     "@types/ws": "^8.18.1",
     "eslint": "^10.7.0",
     "eslint-config-next": "16.2.10",
-    "postcss": "^8.5.17",
+    "postcss": "^8.5.18",
     "prisma": "^7.8.0",
     "tailwindcss": "^4.3.2",
     "typescript": "^6.0.3"
