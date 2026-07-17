@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Surface, Badge } from '@cloudflare/kumo';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api-client';
 import { formatTime, truncate } from '@/lib/utils';
 import { Funnel, BookOpenText } from '@phosphor-icons/react';
@@ -53,22 +54,22 @@ export default function MessagesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-kumo-strong">消息日志</h1>
-        <p className="mt-1 text-sm text-kumo-subtle">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">消息日志</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           路由处理的所有消息记录（最近 200 条，共 {total} 条）
         </p>
       </div>
 
-      <Surface className="rounded-xl border border-kumo-line p-4">
+      <Card className="rounded-xl border border-border p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-kumo-subtle">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Funnel className="h-4 w-4" />
             筛选:
           </div>
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value)}
-            className="h-9 rounded-md border border-kumo-line bg-kumo-base px-3 text-sm text-kumo-default"
+            className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground"
           >
             {KINDS.map((k) => (
               <option key={k} value={k}>
@@ -79,7 +80,7 @@ export default function MessagesPage() {
           <select
             value={dir}
             onChange={(e) => setDir(e.target.value)}
-            className="h-9 rounded-md border border-kumo-line bg-kumo-base px-3 text-sm text-kumo-default"
+            className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground"
           >
             {DIRS.map((d) => (
               <option key={d} value={d}>
@@ -88,34 +89,34 @@ export default function MessagesPage() {
             ))}
           </select>
         </div>
-      </Surface>
+      </Card>
 
-      <Surface className="rounded-xl border border-kumo-line">
+      <Card className="rounded-xl border border-border">
         {loading ? (
-          <div className="p-6 text-sm text-kumo-subtle">加载中...</div>
+          <div className="p-6 text-sm text-muted-foreground">加载中...</div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-kumo-recessed">
-              <BookOpenText className="h-8 w-8 text-kumo-subtle" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <BookOpenText className="h-8 w-8 text-muted-foreground" />
             </div>
-            <div className="text-base font-medium text-kumo-strong">暂无消息</div>
+            <div className="text-base font-medium text-foreground">暂无消息</div>
           </div>
         ) : (
-          <div className="divide-y divide-kumo-line">
+          <div className="divide-y divide-border">
             {messages.map((m) => (
               <div key={m.id} className="flex items-start gap-3 p-4">
                 <span
                   className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                     m.direction === 'IN'
-                      ? 'bg-kumo-success-tint text-kumo-success'
-                      : 'bg-kumo-brand-tint text-kumo-brand'
+                      ? 'bg-success/10 text-success'
+                      : 'bg-primary/10 text-primary'
                   }`}
                 >
                   {m.direction === 'IN' ? '↙' : '↗'}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="font-medium text-kumo-strong">{m.session?.wxName || m.session?.wxId}</span>
+                    <span className="font-medium text-foreground">{m.session?.wxName || m.session?.wxId}</span>
                     {m.channel && (
                       <Badge variant="outline" className="text-[10px]">
                         {m.channel.alias}
@@ -124,7 +125,7 @@ export default function MessagesPage() {
                     <Badge
                       variant={
                         m.kind === 'command'
-                          ? 'primary'
+                          ? 'default'
                           : m.kind === 'system'
                             ? 'warning'
                             : 'secondary'
@@ -134,22 +135,22 @@ export default function MessagesPage() {
                       {m.kind}
                     </Badge>
                     {m.latencyMs && (
-                      <span className="text-kumo-subtle">{m.latencyMs}ms</span>
+                      <span className="text-muted-foreground">{m.latencyMs}ms</span>
                     )}
-                    <span className="text-kumo-subtle">{formatTime(m.createdAt)}</span>
+                    <span className="text-muted-foreground">{formatTime(m.createdAt)}</span>
                   </div>
-                  <div className="mt-1 break-all text-sm text-kumo-default">
+                  <div className="mt-1 break-all text-sm text-foreground">
                     {truncate(m.text || m.error || '(空)', 300)}
                   </div>
                   {m.error && (
-                    <div className="mt-1 text-xs text-kumo-danger">⚠ {m.error}</div>
+                    <div className="mt-1 text-xs text-destructive">⚠ {m.error}</div>
                   )}
                 </div>
               </div>
             ))}
           </div>
         )}
-      </Surface>
+      </Card>
     </div>
   );
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import '@cloudflare/kumo/styles/standalone';
 import { AppShell } from '@/components/app-shell';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -17,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
-      <body className="min-h-screen bg-kumo-base text-kumo-default font-sans antialiased">
+      <body className="min-h-screen bg-background text-foreground font-sans antialiased">
         <AppShell>{children}</AppShell>
         <Toaster />
       </body>

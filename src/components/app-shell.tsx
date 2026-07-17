@@ -31,16 +31,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-kumo-line bg-kumo-elevated">
-        <div className="flex h-16 items-center gap-3 border-b border-kumo-line px-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-kumo-brand shadow-md">
-            <Broadcast weight="bold" className="h-5 w-5 text-white" />
+      <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r bg-card">
+        <div className="flex h-16 items-center gap-3 border-b px-6">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-md">
+            <Broadcast weight="bold" className="h-5 w-5 text-primary-foreground" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold tracking-tight text-kumo-strong">
+            <span className="text-sm font-bold tracking-tight text-foreground">
               iLink-Router
             </span>
-            <span className="text-[10px] uppercase tracking-wider text-kumo-subtle">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
               WeChat Router
             </span>
           </div>
@@ -59,8 +59,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 href={item.href}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   active
-                    ? 'bg-kumo-brand-tint text-kumo-brand shadow-sm'
-                    : 'text-kumo-subtle hover:bg-kumo-recessed hover:text-kumo-default'
+                    ? 'bg-primary/10 text-primary shadow-sm'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 }`}
               >
                 <Icon weight={active ? 'fill' : 'regular'} className="h-4 w-4" />
@@ -70,12 +70,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="border-t border-kumo-line p-3">
+        <div className="border-t p-3">
           <a
             href="https://github.com/ZHYxulei/iLink-Router"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs text-kumo-subtle transition-colors hover:bg-kumo-recessed hover:text-kumo-default"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <GithubLogo className="h-3.5 w-3.5" />
             GitHub

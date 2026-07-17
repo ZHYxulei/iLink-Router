@@ -1,7 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { Surface, Button, Input, Switch } from '@cloudflare/kumo';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/toaster';
 import { api } from '@/lib/api-client';
 import { Gear, Key, FloppyDisk, Shield, CircleNotch } from '@phosphor-icons/react';
@@ -93,18 +96,18 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-kumo-strong">设置</h1>
-        <p className="mt-1 text-sm text-kumo-subtle">管理员认证与运行配置</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">设置</h1>
+        <p className="mt-1 text-sm text-muted-foreground">管理员认证与运行配置</p>
       </div>
 
       {/* Admin Token */}
-      <Surface className="rounded-xl border border-kumo-line p-5">
+      <Card className="rounded-xl border border-border p-5">
         <div className="mb-4">
-          <h3 className="flex items-center gap-2 text-lg font-semibold text-kumo-strong">
-            <Key className="h-4 w-4 text-kumo-brand" />
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <Key className="h-4 w-4 text-primary" />
             Admin Token
           </h3>
-          <p className="mt-1 text-sm text-kumo-subtle">
+          <p className="mt-1 text-sm text-muted-foreground">
             当后端环境变量 <code>ADMIN_TOKEN</code> 设置后，所有 API 请求需携带此令牌。
             保存后，前端会在所有请求中自动加上 <code>Authorization: Bearer</code>。
           </p>
@@ -116,26 +119,27 @@ export default function SettingsPage() {
             onChange={(e) => setToken(e.target.value)}
             placeholder="留空则禁用管理员认证"
           />
-          <Button variant="primary" icon={FloppyDisk} onClick={onSaveToken}>
+          <Button variant="default" onClick={onSaveToken}>
+            <FloppyDisk className="h-4 w-4" />
             保存
           </Button>
         </div>
-      </Surface>
+      </Card>
 
       {/* API 访问控制 */}
-      <Surface className="rounded-xl border border-kumo-line p-5">
+      <Card className="rounded-xl border border-border p-5">
         <div className="mb-4">
-          <h3 className="flex items-center gap-2 text-lg font-semibold text-kumo-strong">
-            <Shield className="h-4 w-4 text-kumo-brand" />
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <Shield className="h-4 w-4 text-primary" />
             API 访问控制
           </h3>
-          <p className="mt-1 text-sm text-kumo-subtle">
+          <p className="mt-1 text-sm text-muted-foreground">
             二维码 API (<code>/api/qr</code>) 的请求方式与密钥校验
           </p>
         </div>
         <div className="space-y-4">
           {settingsLoading ? (
-            <div className="flex items-center gap-2 text-sm text-kumo-subtle">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CircleNotch className="h-4 w-4 animate-spin" />
               加载中...
             </div>
@@ -143,15 +147,15 @@ export default function SettingsPage() {
             settings.map((item) => (
               <div
                 key={item.key}
-                className="rounded-lg border border-kumo-line bg-kumo-recessed p-4"
+                className="rounded-lg border border-border bg-muted p-4"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
-                    <label className="text-sm font-medium text-kumo-strong">{item.label}</label>
-                    <p className="mt-1 text-xs text-kumo-subtle">
+                    <label className="text-sm font-medium text-foreground">{item.label}</label>
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {item.description}
                     </p>
-                    <p className="mt-1 text-[10px] text-kumo-subtle">
+                    <p className="mt-1 text-[10px] text-muted-foreground">
                       键: <code className="font-mono">{item.key}</code>
                       {' · '}
                       默认: <code className="font-mono">{String(item.default)}</code>
@@ -185,21 +189,22 @@ export default function SettingsPage() {
                     {item.type === 'boolean' ? (
                       <Button
                         size="sm"
-                        variant="primary"
-                        shape="square"
+                        variant="default"
                         aria-label="保存"
-                        icon={<FloppyDisk className="h-3.5 w-3.5" />}
                         loading={settingsSaving === item.key}
                         onClick={() => onSaveSetting(item.key)}
-                      />
+                        className="w-8 px-0"
+                      >
+                        <FloppyDisk className="h-3.5 w-3.5" />
+                      </Button>
                     ) : (
                       <Button
                         size="sm"
-                        variant="primary"
-                        icon={FloppyDisk}
+                        variant="default"
                         loading={settingsSaving === item.key}
                         onClick={() => onSaveSetting(item.key)}
                       >
+                        <FloppyDisk className="h-4 w-4" />
                         保存
                       </Button>
                     )}
@@ -209,16 +214,16 @@ export default function SettingsPage() {
             ))
           )}
         </div>
-      </Surface>
+      </Card>
 
       {/* 运行配置 */}
-      <Surface className="rounded-xl border border-kumo-line p-5">
+      <Card className="rounded-xl border border-border p-5">
         <div className="mb-4">
-          <h3 className="flex items-center gap-2 text-lg font-semibold text-kumo-strong">
-            <Gear className="h-4 w-4 text-kumo-brand" />
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <Gear className="h-4 w-4 text-primary" />
             运行配置
           </h3>
-          <p className="mt-1 text-sm text-kumo-subtle">
+          <p className="mt-1 text-sm text-muted-foreground">
             以下配置通过 <code>.env</code> 文件设置，重启服务后生效
           </p>
         </div>
@@ -234,12 +239,12 @@ export default function SettingsPage() {
           <ConfigItem name="ADMIN_TOKEN" desc="管理员令牌，留空则禁用认证" />
           <ConfigItem name="UPSTREAM_WEBHOOK_SECRET" desc="转发到上游时携带的共享密钥" />
         </div>
-      </Surface>
+      </Card>
 
-      <Surface className="rounded-xl border border-kumo-line p-5">
+      <Card className="rounded-xl border border-border p-5">
         <div className="mb-4">
-          <h3 className="text-lg font-semibold text-kumo-strong">上游 HTTP 协议</h3>
-          <p className="mt-1 text-sm text-kumo-subtle">
+          <h3 className="text-lg font-semibold text-foreground">上游 HTTP 协议</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
             路由向渠道 webhook 发送的请求格式
           </p>
         </div>
@@ -271,16 +276,16 @@ X-ILink-Router-Secret: <UPSTREAM_WEBHOOK_SECRET>  # 可选，全局共享密钥
 # 异步回复: 上游稍后 POST 到 /api/inbound:
 # { "sessionId": "...", "reply": "..." }`}
         </pre>
-      </Surface>
+      </Card>
     </div>
   );
 }
 
 function ConfigItem({ name, desc }: { name: string; desc: string }) {
   return (
-    <div className="rounded-lg border border-kumo-line bg-kumo-recessed p-3">
-      <div className="font-mono text-xs font-bold text-kumo-brand">{name}</div>
-      <div className="mt-1 text-xs text-kumo-subtle">{desc}</div>
+    <div className="rounded-lg border border-border bg-muted p-3">
+      <div className="font-mono text-xs font-bold text-primary">{name}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{desc}</div>
     </div>
   );
 }

@@ -1,7 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { Surface, Badge, Button, Input, InputArea } from '@cloudflare/kumo';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toaster';
 import { PaperPlaneTilt, Plus, Trash, ClockCounterClockwise, Copy, Clock } from '@phosphor-icons/react';
 
@@ -192,24 +196,24 @@ export default function DebugPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-kumo-strong">API 调试</h1>
-        <p className="mt-1 text-sm text-kumo-subtle">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">API 调试</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           调试路由器 API 接口，支持自定义请求方法、URL、请求头和请求体
         </p>
       </div>
 
       {/* 预设接口 */}
-      <Surface className="rounded-xl border border-kumo-line p-5">
+      <Card className="rounded-xl border border-border p-5">
         <div className="mb-3">
-          <h3 className="text-base font-semibold text-kumo-strong">常用接口</h3>
-          <p className="text-xs text-kumo-subtle">点击快速填充请求参数</p>
+          <h3 className="text-base font-semibold text-foreground">常用接口</h3>
+          <p className="text-xs text-muted-foreground">点击快速填充请求参数</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {PRESETS.map((p) => (
             <button
               key={p.label}
               onClick={() => applyPreset(p)}
-              className="inline-flex items-center gap-1.5 rounded-md border border-kumo-line bg-kumo-base px-3 py-1.5 text-xs font-medium transition-colors hover:bg-kumo-tint"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
             >
               <Badge variant="outline" className="text-[9px]">
                 {p.method}
@@ -218,13 +222,13 @@ export default function DebugPage() {
             </button>
           ))}
         </div>
-      </Surface>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* 请求构造 */}
-        <Surface className="rounded-xl border border-kumo-line p-5">
+        <Card className="rounded-xl border border-border p-5">
           <div className="mb-4">
-            <h3 className="text-base font-semibold text-kumo-strong">请求</h3>
+            <h3 className="text-base font-semibold text-foreground">请求</h3>
           </div>
           <div className="space-y-4">
             {/* Method + URL */}
@@ -232,7 +236,7 @@ export default function DebugPage() {
               <select
                 value={method}
                 onChange={(e) => setMethod(e.target.value as Method)}
-                className="h-10 w-28 rounded-md border border-kumo-line bg-kumo-base px-2 text-sm font-medium text-kumo-default"
+                className="h-10 w-28 rounded-md border border-border bg-background px-2 text-sm font-medium text-foreground"
               >
                 <option value="GET">GET</option>
                 <option value="POST">POST</option>
@@ -254,14 +258,14 @@ export default function DebugPage() {
             {/* Headers */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-kumo-default">请求头</label>
+                <label className="text-xs font-semibold text-foreground">请求头</label>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={addHeader}
                   className="h-7 px-2"
-                  icon={<Plus weight="duotone" className="h-3 w-3" />}
                 >
+                  <Plus weight="duotone" className="h-3 w-3" />
                   添加
                 </Button>
               </div>
@@ -283,11 +287,12 @@ export default function DebugPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      shape="square"
                       aria-label="删除请求头"
                       onClick={() => removeHeader(h.id)}
-                      icon={<Trash weight="duotone" className="h-3 w-3" />}
-                    />
+                      className="w-8 px-0"
+                    >
+                      <Trash weight="duotone" className="h-3 w-3" />
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -296,8 +301,8 @@ export default function DebugPage() {
             {/* Body */}
             {method !== 'GET' && method !== 'DELETE' && (
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-kumo-default">请求体 (JSON)</label>
-                <InputArea
+                <label className="text-xs font-semibold text-foreground">请求体 (JSON)</label>
+                <Textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   placeholder='{"key":"value"}'
@@ -307,24 +312,24 @@ export default function DebugPage() {
             )}
 
             <Button
-              variant="primary"
+              variant="default"
               onClick={sendRequest}
               disabled={loading}
               loading={loading}
               className="w-full"
-              icon={PaperPlaneTilt}
             >
+              <PaperPlaneTilt weight="duotone" className="h-4 w-4" />
               发送请求
               <span className="ml-1 text-[10px] opacity-60">Ctrl+Enter</span>
             </Button>
           </div>
-        </Surface>
+        </Card>
 
         {/* 响应 */}
-        <Surface className="rounded-xl border border-kumo-line p-5">
+        <Card className="rounded-xl border border-border p-5">
           <div className="mb-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold text-kumo-strong">响应</h3>
+              <h3 className="text-base font-semibold text-foreground">响应</h3>
               {response && (
                 <div className="flex items-center gap-2">
                   <Badge variant={statusColor(response.status) as never}>
@@ -340,21 +345,21 @@ export default function DebugPage() {
           </div>
           <div className="space-y-3">
             {!response ? (
-              <p className="py-12 text-center text-sm text-kumo-subtle">
+              <p className="py-12 text-center text-sm text-muted-foreground">
                 发送请求后在此查看响应
               </p>
             ) : (
               <>
                 {/* Response headers */}
                 <div>
-                  <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-kumo-subtle">
+                  <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     响应头
                   </div>
-                  <div className="max-h-32 overflow-auto rounded-md bg-kumo-recessed/50 p-2 text-[10px]">
+                  <div className="max-h-32 overflow-auto rounded-md bg-muted/50 p-2 text-[10px]">
                     {Object.entries(response.headers).map(([k, v]) => (
                       <div key={k} className="font-mono">
-                        <span className="text-kumo-brand">{k}:</span>{' '}
-                        <span className="text-kumo-subtle">{v}</span>
+                        <span className="text-primary">{k}:</span>{' '}
+                        <span className="text-muted-foreground">{v}</span>
                       </div>
                     ))}
                   </div>
@@ -362,32 +367,32 @@ export default function DebugPage() {
                 {/* Response body */}
                 <div>
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-kumo-subtle">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                       响应体
                     </span>
                     <button
                       onClick={() => copyToClipboard(response.body)}
-                      className="text-[10px] text-kumo-brand hover:underline"
+                      className="text-[10px] text-primary hover:underline"
                     >
                       <Copy className="mr-1 inline h-3 w-3" weight="duotone" />
                       复制
                     </button>
                   </div>
-                  <pre className="max-h-96 overflow-auto rounded-md bg-kumo-recessed/50 p-3 font-mono text-xs leading-relaxed text-kumo-default">
+                  <pre className="max-h-96 overflow-auto rounded-md bg-muted/50 p-3 font-mono text-xs leading-relaxed text-foreground">
                     {formatBody(response.body)}
                   </pre>
                 </div>
               </>
             )}
           </div>
-        </Surface>
+        </Card>
       </div>
 
       {/* 历史记录 */}
       {history.length > 0 && (
-        <Surface className="rounded-xl border border-kumo-line p-5">
+        <Card className="rounded-xl border border-border p-5">
           <div className="mb-3">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-kumo-strong">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
               <ClockCounterClockwise weight="duotone" className="h-4 w-4" />
               请求历史
             </h3>
@@ -400,22 +405,22 @@ export default function DebugPage() {
                   setMethod(h.method);
                   setUrl(h.url);
                 }}
-                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-xs transition-colors hover:bg-kumo-tint"
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-xs transition-colors hover:bg-accent"
               >
                 <Badge variant="outline" className="w-14 justify-center text-[9px]">
                   {h.method}
                 </Badge>
-                <code className="flex-1 truncate font-mono text-kumo-subtle">
+                <code className="flex-1 truncate font-mono text-muted-foreground">
                   {h.url}
                 </code>
                 <Badge variant={statusColor(h.status) as never} className="text-[9px]">
                   {h.status}
                 </Badge>
-                <span className="text-[10px] text-kumo-subtle">{h.durationMs}ms</span>
+                <span className="text-[10px] text-muted-foreground">{h.durationMs}ms</span>
               </button>
             ))}
           </div>
-        </Surface>
+        </Card>
       )}
     </div>
   );

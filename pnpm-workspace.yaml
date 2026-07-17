@@ -4,7 +4,8 @@ allowBuilds:
   sharp: set this to true or false
 
 minimumReleaseAgeExclude:
-  - postcss@8.5.17
+  - postcss@8.5.17 || 8.5.18
+  - nanoid@6.0.0
 
 onlyBuiltDependencies:
   - "@prisma/client"

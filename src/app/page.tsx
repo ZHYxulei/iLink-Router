@@ -2,7 +2,9 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Surface, Badge, Button } from '@cloudflare/kumo';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api-client';
 import { timeAgo, truncate } from '@/lib/utils';
 import {
@@ -133,24 +135,24 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-bold tracking-tight text-kumo-strong">仪表盘</h1>
-          <p className="text-sm text-kumo-subtle">路由运行总览 · 每 30 秒自动刷新</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">仪表盘</h1>
+          <p className="text-sm text-muted-foreground">路由运行总览 · 每 30 秒自动刷新</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className={`flex h-2.5 w-2.5 rounded-full ${isOnline ? 'bg-kumo-success animate-pulse' : 'bg-kumo-subtle'}`} />
-          <span className="text-sm font-medium text-kumo-subtle">
+          <div className={`flex h-2.5 w-2.5 rounded-full ${isOnline ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`} />
+          <span className="text-sm font-medium text-muted-foreground">
             {isOnline ? '系统在线' : '系统离线'}
           </span>
         </div>
       </div>
 
       {err && (
-        <Surface className="rounded-lg border border-kumo-danger/30 bg-kumo-danger-tint p-3">
-          <div className="flex items-center gap-2 text-sm text-kumo-danger">
+        <Card className="rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+          <div className="flex items-center gap-2 text-sm text-destructive">
             <WarningCircle weight="duotone" className="h-4 w-4" />
             加载失败: {err}
           </div>
-        </Surface>
+        </Card>
       )}
 
       {/* 统计卡片 — 4 列 */}
@@ -168,7 +170,7 @@ export default function DashboardPage() {
                     ? 'warning'
                     : router?.status === 'error'
                       ? 'error'
-                      : 'neutral'
+                      : 'secondary'
               }
             >
               {router?.status || 'offline'}
@@ -180,21 +182,21 @@ export default function DashboardPage() {
           icon={<Plug weight="duotone" className="h-5 w-5" />}
           label="已启用渠道"
           accent="info"
-          value={<span className="text-3xl font-bold text-kumo-strong">{stats?.channels.enabled ?? '-'}</span>}
+          value={<span className="text-3xl font-bold text-foreground">{stats?.channels.enabled ?? '-'}</span>}
           sub={`共 ${stats?.channels.total ?? '-'} 个`}
         />
         <StatCard
           icon={<Users weight="duotone" className="h-5 w-5" />}
           label="活跃会话 (24h)"
           accent="success"
-          value={<span className="text-3xl font-bold text-kumo-strong">{stats?.sessions.activeToday ?? '-'}</span>}
+          value={<span className="text-3xl font-bold text-foreground">{stats?.sessions.activeToday ?? '-'}</span>}
           sub={`总会话 ${stats?.sessions.total ?? '-'}`}
         />
         <StatCard
           icon={<PaperPlaneTilt weight="duotone" className="h-5 w-5" />}
           label="今日消息"
           accent="warning"
-          value={<span className="text-3xl font-bold text-kumo-strong">{stats?.messages.today ?? '-'}</span>}
+          value={<span className="text-3xl font-bold text-foreground">{stats?.messages.today ?? '-'}</span>}
           sub={`总计 ${stats?.messages.total ?? '-'}`}
         />
       </div>
@@ -202,13 +204,13 @@ export default function DashboardPage() {
       {/* 第二行：趋势图 + 渠道分布 */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* 24h 消息趋势 */}
-        <Surface className="rounded-xl border border-kumo-line p-5 lg:col-span-2">
+        <Card className="rounded-xl border border-border p-5 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <ChartBar weight="duotone" className="h-5 w-5 text-kumo-brand" />
-              <h3 className="text-lg font-semibold text-kumo-strong">24 小时消息趋势</h3>
+              <ChartBar weight="duotone" className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold text-foreground">24 小时消息趋势</h3>
             </div>
-            <span className="text-xs text-kumo-subtle">基于最近 20 条消息</span>
+            <span className="text-xs text-muted-foreground">基于最近 20 条消息</span>
           </div>
           {hourlyData.length > 0 ? (
             <div className="flex h-40 items-end gap-1">
@@ -218,29 +220,29 @@ export default function DashboardPage() {
                     <div
                       className={`w-full rounded-t transition-all duration-300 ${
                         h.count > 0
-                          ? 'bg-gradient-to-t from-kumo-brand to-kumo-brand/60'
-                          : 'bg-kumo-recessed'
+                          ? 'bg-gradient-to-t from-primary to-primary/60'
+                          : 'bg-muted'
                       }`}
                       style={{ height: `${Math.max(4, (h.count / maxHourly) * 100)}%` }}
                       title={`${h.hour}: ${h.count} 条`}
                     />
                   </div>
-                  <span className="text-[9px] text-kumo-subtle">{h.hour}</span>
+                  <span className="text-[9px] text-muted-foreground">{h.hour}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex h-40 items-center justify-center text-sm text-kumo-subtle">
+            <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
               暂无趋势数据
             </div>
           )}
-        </Surface>
+        </Card>
 
         {/* 渠道分布饼图 */}
-        <Surface className="rounded-xl border border-kumo-line p-5">
+        <Card className="rounded-xl border border-border p-5">
           <div className="mb-4 flex items-center gap-2">
-            <Pulse weight="duotone" className="h-5 w-5 text-kumo-brand" />
-            <h3 className="text-lg font-semibold text-kumo-strong">渠道分布</h3>
+            <Pulse weight="duotone" className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">渠道分布</h3>
           </div>
           {channelDist.length > 0 ? (
             <div className="space-y-3">
@@ -254,11 +256,11 @@ export default function DashboardPage() {
                   <div key={c.channelId || c.alias} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="h-3 w-3 shrink-0 rounded-sm" style={{ background: c.color }} />
-                      <span className="truncate text-kumo-default">{c.alias}</span>
+                      <span className="truncate text-foreground">{c.alias}</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="font-mono text-xs text-kumo-subtle">{c.count}</span>
-                      <span className="text-xs text-kumo-subtle">{c.pct}%</span>
+                      <span className="font-mono text-xs text-muted-foreground">{c.count}</span>
+                      <span className="text-xs text-muted-foreground">{c.pct}%</span>
                     </div>
                   </div>
                 ))}
@@ -272,16 +274,16 @@ export default function DashboardPage() {
               cta="绑定渠道"
             />
           )}
-        </Surface>
+        </Card>
       </div>
 
       {/* 第三行：系统信息 + 快捷操作 */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* 系统信息 */}
-        <Surface className="rounded-xl border border-kumo-line p-5">
+        <Card className="rounded-xl border border-border p-5">
           <div className="mb-4 flex items-center gap-2">
-            <HardDrives weight="duotone" className="h-5 w-5 text-kumo-brand" />
-            <h3 className="text-lg font-semibold text-kumo-strong">系统信息</h3>
+            <HardDrives weight="duotone" className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">系统信息</h3>
           </div>
           <div className="space-y-3">
             <InfoRow icon={<Clock className="h-4 w-4" />} label="运行时间" value={formatUptime(liveUptime)} mono />
@@ -289,13 +291,13 @@ export default function DashboardPage() {
             <InfoRow icon={<Lightning className="h-4 w-4" />} label="消息成功率" value={successRate !== null ? `${successRate}%` : '-'} accent={successRate !== null && successRate >= 95 ? 'success' : 'warning'} />
             <InfoRow icon={<Broadcast className="h-4 w-4" />} label="路由版本" value="v0.3.0" mono />
           </div>
-        </Surface>
+        </Card>
 
         {/* 快捷操作 */}
-        <Surface className="rounded-xl border border-kumo-line p-5">
+        <Card className="rounded-xl border border-border p-5">
           <div className="mb-4 flex items-center gap-2">
-            <Lightning weight="duotone" className="h-5 w-5 text-kumo-brand" />
-            <h3 className="text-lg font-semibold text-kumo-strong">快捷操作</h3>
+            <Lightning weight="duotone" className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">快捷操作</h3>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <QuickAction href="/router" icon={<Broadcast className="h-5 w-5" />} label="路由控制" />
@@ -305,16 +307,16 @@ export default function DashboardPage() {
             <QuickAction href="/sessions" icon={<Users className="h-5 w-5" />} label="用户会话" />
             <QuickAction href="/settings" icon={<Gear className="h-5 w-5" />} label="系统设置" />
           </div>
-        </Surface>
+        </Card>
 
         {/* 路由状态详情 */}
-        <Surface className="rounded-xl border border-kumo-line p-5">
+        <Card className="rounded-xl border border-border p-5">
           <div className="mb-4 flex items-center gap-2">
             <CircleNotch
               weight="duotone"
-              className={`h-5 w-5 ${isOnline ? 'text-kumo-success animate-spin' : 'text-kumo-subtle'}`}
+              className={`h-5 w-5 ${isOnline ? 'text-success animate-spin' : 'text-muted-foreground'}`}
             />
-            <h3 className="text-lg font-semibold text-kumo-strong">{isOnline ? '运行中' : '未启动'}</h3>
+            <h3 className="text-lg font-semibold text-foreground">{isOnline ? '运行中' : '未启动'}</h3>
           </div>
           <div className="space-y-2 text-sm">
             <InfoRow label="登录状态" value={
@@ -326,26 +328,26 @@ export default function DashboardPage() {
             <InfoRow label="账号 ID" value={router?.selfWxId || '-'} mono />
           </div>
           {router?.lastError && (
-            <div className="mt-3 flex items-start gap-2 rounded-lg border border-kumo-danger/30 bg-kumo-danger-tint p-2.5 text-xs text-kumo-danger">
+            <div className="mt-3 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">
               <WarningCircle weight="duotone" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span className="break-all">{router.lastError}</span>
             </div>
           )}
           <Link href="/router">
-            <Button variant={isOnline ? 'secondary' : 'primary'} className="mt-4 w-full">
+            <Button variant={isOnline ? 'secondary' : 'default'} className="mt-4 w-full">
               打开路由控制
               <ArrowUpRight className="h-4 w-4" />
             </Button>
           </Link>
-        </Surface>
+        </Card>
       </div>
 
       {/* 最近消息列表 */}
-      <Surface className="rounded-xl border border-kumo-line p-5">
+      <Card className="rounded-xl border border-border p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-kumo-strong">最近消息</h3>
-            <p className="text-sm text-kumo-subtle">路由处理的最近 20 条消息</p>
+            <h3 className="text-lg font-semibold text-foreground">最近消息</h3>
+            <p className="text-sm text-muted-foreground">路由处理的最近 20 条消息</p>
           </div>
           <Link href="/messages">
             <Button size="sm" variant="ghost">
@@ -359,20 +361,20 @@ export default function DashboardPage() {
             {stats.recentMessages.map((m) => (
               <div
                 key={m.id}
-                className="flex items-start gap-3 rounded-lg border border-kumo-line bg-kumo-recessed/50 p-3 text-sm transition-colors hover:bg-kumo-recessed"
+                className="flex items-start gap-3 rounded-lg border border-border bg-muted/50 p-3 text-sm transition-colors hover:bg-muted"
               >
                 <span
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                     m.direction === 'IN'
-                      ? 'bg-kumo-success-tint text-kumo-success'
-                      : 'bg-kumo-brand-tint text-kumo-brand'
+                      ? 'bg-success/10 text-success'
+                      : 'bg-primary/10 text-primary'
                   }`}
                 >
                   {m.direction === 'IN' ? '↙' : '↗'}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-kumo-subtle">
-                    <span className="font-medium text-kumo-strong">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">
                       {m.session?.wxName || m.session?.wxId || '未知用户'}
                     </span>
                     {m.channel && (
@@ -381,12 +383,12 @@ export default function DashboardPage() {
                     <Badge
                       variant={
                         m.kind === 'command'
-                          ? 'primary'
+                          ? 'default'
                           : m.kind === 'system'
                             ? 'warning'
                             : m.kind === 'reply'
                               ? 'success'
-                              : 'neutral'
+                              : 'secondary'
                       }
                       className="text-[10px]"
                     >
@@ -394,11 +396,11 @@ export default function DashboardPage() {
                     </Badge>
                     <span>{timeAgo(m.createdAt)}</span>
                   </div>
-                  <div className="mt-1 break-all text-sm text-kumo-default">
+                  <div className="mt-1 break-all text-sm text-foreground">
                     {truncate(m.text || m.error || '(空消息)', 200)}
                   </div>
                   {m.error && (
-                    <div className="mt-1 flex items-center gap-1 text-xs text-kumo-danger">
+                    <div className="mt-1 flex items-center gap-1 text-xs text-destructive">
                       <WarningCircle className="h-3 w-3" />
                       {m.error}
                     </div>
@@ -415,7 +417,7 @@ export default function DashboardPage() {
             cta="去启动路由"
           />
         )}
-      </Surface>
+      </Card>
     </div>
   );
 }
@@ -429,7 +431,7 @@ function DonutChart({ data }: { data: { count: number; color: string; pct: numbe
 
   return (
     <svg width="140" height="140" viewBox="0 0 140 140">
-      <circle cx="70" cy="70" r={radius} fill="none" stroke="var(--color-kumo-recessed)" strokeWidth="14" />
+      <circle cx="70" cy="70" r={radius} fill="none" stroke="var(--color-muted)" strokeWidth="14" />
       {data.map((d, i) => {
         const len = (d.count / total) * circumference;
         const seg = (
@@ -450,10 +452,10 @@ function DonutChart({ data }: { data: { count: number; color: string; pct: numbe
         offset += len;
         return seg;
       })}
-      <text x="70" y="66" textAnchor="middle" className="fill-kumo-strong text-lg font-bold">
+      <text x="70" y="66" textAnchor="middle" className="fill-foreground text-lg font-bold">
         {total}
       </text>
-      <text x="70" y="82" textAnchor="middle" className="fill-kumo-subtle text-[10px]">
+      <text x="70" y="82" textAnchor="middle" className="fill-muted-foreground text-[10px]">
         总消息
       </text>
     </svg>
@@ -462,10 +464,10 @@ function DonutChart({ data }: { data: { count: number; color: string; pct: numbe
 
 // --- 统计卡片 ---
 const ACCENT_COLORS: Record<string, string> = {
-  brand: 'bg-kumo-brand-tint text-kumo-brand',
-  info: 'bg-kumo-info-tint text-kumo-info',
-  success: 'bg-kumo-success-tint text-kumo-success',
-  warning: 'bg-kumo-warning-tint text-kumo-warning',
+  brand: 'bg-primary/10 text-primary',
+  info: 'bg-primary/10 text-primary',
+  success: 'bg-success/10 text-success',
+  warning: 'bg-warning/10 text-warning',
 };
 
 function StatCard({
@@ -482,16 +484,16 @@ function StatCard({
   accent?: keyof typeof ACCENT_COLORS | string;
 }) {
   return (
-    <Surface className="rounded-xl border border-kumo-line p-5 transition-shadow hover:shadow-md">
+    <Card className="rounded-xl border border-border p-5 transition-shadow hover:shadow-md">
       <div className="flex items-center justify-between">
-        <span className="text-xs uppercase tracking-wider text-kumo-subtle">{label}</span>
+        <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
         <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${ACCENT_COLORS[accent] || ACCENT_COLORS.brand}`}>
           {icon}
         </div>
       </div>
       <div className="mt-3">{value}</div>
-      {sub && <div className="mt-1 text-xs text-kumo-subtle">{sub}</div>}
-    </Surface>
+      {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
+    </Card>
   );
 }
 
@@ -510,14 +512,14 @@ function InfoRow({
   accent?: 'success' | 'warning' | 'danger';
 }) {
   const valueColor =
-    accent === 'success' ? 'text-kumo-success' :
-    accent === 'warning' ? 'text-kumo-warning' :
-    accent === 'danger' ? 'text-kumo-danger' :
-    'text-kumo-default';
+    accent === 'success' ? 'text-success' :
+    accent === 'warning' ? 'text-warning' :
+    accent === 'danger' ? 'text-destructive' :
+    'text-foreground';
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="flex items-center gap-2 text-kumo-subtle">
-        {icon && <span className="text-kumo-subtle">{icon}</span>}
+      <span className="flex items-center gap-2 text-muted-foreground">
+        {icon && <span className="text-muted-foreground">{icon}</span>}
         {label}
       </span>
       <span className={`text-right ${mono ? 'font-mono text-xs' : 'text-xs'} ${valueColor}`}>
@@ -532,12 +534,12 @@ function QuickAction({ href, icon, label }: { href: string; icon: React.ReactNod
   return (
     <Link
       href={href}
-      className="flex flex-col items-center gap-2 rounded-lg border border-kumo-line bg-kumo-recessed/50 p-4 text-center transition-all hover:border-kumo-brand/40 hover:bg-kumo-recessed"
+      className="flex flex-col items-center gap-2 rounded-lg border border-border bg-muted/50 p-4 text-center transition-all hover:border-primary/40 hover:bg-muted"
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-kumo-brand-tint text-kumo-brand">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
         {icon}
       </div>
-      <span className="text-xs font-medium text-kumo-default">{label}</span>
+      <span className="text-xs font-medium text-foreground">{label}</span>
     </Link>
   );
 }
@@ -559,11 +561,11 @@ function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-kumo-recessed">
-        <CheckCircle weight="duotone" className="h-6 w-6 text-kumo-subtle" />
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+        <CheckCircle weight="duotone" className="h-6 w-6 text-muted-foreground" />
       </div>
-      <div className="text-base font-medium text-kumo-strong">{title}</div>
-      <div className="max-w-sm text-xs text-kumo-subtle">{description}</div>
+      <div className="text-base font-medium text-foreground">{title}</div>
+      <div className="max-w-sm text-xs text-muted-foreground">{description}</div>
       <Link href={href}>
         <Button size="sm" variant="outline">
           {cta}

@@ -1,7 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import { Surface, Badge, Button, Text, Input, InputArea, Switch, Field, Dialog } from '@cloudflare/kumo';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/toaster';
 import { api } from '@/lib/api-client';
 import { timeAgo } from '@/lib/utils';
@@ -106,47 +113,49 @@ export default function ChannelsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <Text variant="heading1" as="h1">渠道管理</Text>
-          <Text size="sm" variant="secondary">
+          <h1 className="text-3xl font-semibold tracking-tight">渠道管理</h1>
+          <p className="text-sm text-muted-foreground">
             绑定多个上游渠道（Webhook / OneBot / Satori / WebSocket），路由将按用户选择转发消息
-          </Text>
+          </p>
         </div>
-        <Button variant="primary" icon={Plus} onClick={() => setCreating(true)}>
+        <Button variant="default" onClick={() => setCreating(true)}>
+          <Plus className="h-4 w-4" />
           添加渠道
         </Button>
       </div>
 
       {loading ? (
-        <Text size="sm" variant="secondary">加载中...</Text>
+        <p className="text-sm text-muted-foreground">加载中...</p>
       ) : channels.length === 0 ? (
-        <Surface className="rounded-xl border border-kumo-line p-5">
+        <Card className="rounded-xl border border-border p-5">
           <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-kumo-recessed">
-              <Plus weight="duotone" className="h-8 w-8 text-kumo-subtle" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <Plus weight="duotone" className="h-8 w-8 text-muted-foreground" />
             </div>
-            <Text variant="heading3" as="h3">还没有添加任何渠道</Text>
+            <h3 className="text-lg font-semibold">还没有添加任何渠道</h3>
             <div className="max-w-md">
-              <Text size="sm" variant="secondary">
+              <p className="text-sm text-muted-foreground">
                 渠道是上游服务，路由会把用户消息转发到当前会话选定的渠道并获取回复
-              </Text>
+              </p>
             </div>
-            <Button variant="primary" icon={Plus} onClick={() => setCreating(true)}>
+            <Button variant="default" onClick={() => setCreating(true)}>
+              <Plus className="h-4 w-4" />
               添加第一个渠道
             </Button>
           </div>
-        </Surface>
+        </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {channels.map((c) => (
-            <Surface
+            <Card
               key={c.id}
-              className={`rounded-xl border border-kumo-line p-5 ${c.enabled ? '' : 'opacity-60'}`}
+              className={`rounded-xl border border-border p-5 ${c.enabled ? '' : 'opacity-60'}`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{typeIcon(c.type)}</span>
-                    <Text variant="heading3" as="h3" truncate>{c.name}</Text>
+                    <h3 className="truncate text-lg font-semibold">{c.name}</h3>
                     {c.isDefault && (
                       <Badge variant="warning" className="shrink-0">
                         <Star weight="fill" className="h-3 w-3" />
@@ -155,7 +164,7 @@ export default function ChannelsPage() {
                     )}
                   </div>
                   <div className="mt-1 flex items-center gap-2">
-                    <code className="rounded bg-kumo-brand-tint px-1.5 py-0.5 text-xs font-bold text-kumo-brand">
+                    <code className="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-bold text-primary">
                       {c.alias}
                     </code>
                     <Badge variant="outline" className="text-[10px]">
@@ -170,57 +179,60 @@ export default function ChannelsPage() {
 
               <div className="mt-3 space-y-3">
                 {c.description && (
-                  <Text size="xs" variant="secondary">{c.description}</Text>
+                  <p className="text-xs text-muted-foreground">{c.description}</p>
                 )}
                 {/* WEBHOOK 类型：显示生成的 webhook URL */}
                 {displayType(c.type) === 'WEBHOOK' && getInboundWebhookUrl(c.alias, c.config) && (
-                  <div className="rounded-md border border-kumo-brand/20 bg-kumo-brand-tint p-2">
-                    <div className="mb-1 flex items-center gap-1 text-[10px] font-medium text-kumo-brand">
+                  <div className="rounded-md border border-primary/20 bg-primary/10 p-2">
+                    <div className="mb-1 flex items-center gap-1 text-[10px] font-medium text-primary">
                       <ArrowUpRight weight="duotone" className="h-3 w-3" />
                       Webhook URL
                     </div>
                     <div className="flex items-center gap-1">
-                      <code className="flex-1 truncate text-[10px] text-kumo-subtle">
+                      <code className="flex-1 truncate text-[10px] text-muted-foreground">
                         {getInboundWebhookUrl(c.alias, c.config)}
                       </code>
                       <Button
-                        size="xs"
+                        size="icon"
                         variant="ghost"
-                        shape="square"
                         aria-label="复制 URL"
-                        icon={<Copy weight="duotone" className="h-3 w-3 text-kumo-brand" />}
+                        className="h-7 w-7"
                         onClick={() => {
                           navigator.clipboard.writeText(getInboundWebhookUrl(c.alias, c.config) || '');
                           toast({ title: '已复制', description: 'Webhook URL 已复制到剪贴板', variant: 'success' });
                         }}
-                      />
+                      >
+                        <Copy weight="duotone" className="h-3 w-3 text-primary" />
+                      </Button>
                     </div>
                   </div>
                 )}
-                <div className="truncate text-xs text-kumo-subtle">
+                <div className="truncate text-xs text-muted-foreground">
                   {getEndpointPreview(c)}
                 </div>
-                <div className="text-[10px] text-kumo-subtle">
+                <div className="text-[10px] text-muted-foreground">
                   更新于 {timeAgo(c.updatedAt)}
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
-                  <Button size="sm" variant="outline" icon={Lightning} onClick={() => onTest(c)}>
+                  <Button size="sm" variant="outline" onClick={() => onTest(c)}>
+                    <Lightning className="h-4 w-4" />
                     测试
                   </Button>
-                  <Button size="sm" variant="secondary" icon={PencilSimple} onClick={() => setEditing(c)}>
+                  <Button size="sm" variant="secondary" onClick={() => setEditing(c)}>
+                    <PencilSimple className="h-4 w-4" />
                     编辑
                   </Button>
                   <Button
-                    size="sm"
+                    size="icon"
                     variant="destructive"
-                    shape="square"
-                    icon={Trash}
                     aria-label="删除"
                     onClick={() => onDelete(c)}
-                  />
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-            </Surface>
+            </Card>
           ))}
         </div>
       )}
@@ -391,14 +403,14 @@ function ChannelDialog({
   const def = CHANNEL_TYPE_MAP[selectedType];
 
   return (
-    <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <Dialog size="xl" className="p-6">
-        <Dialog.Title>{channel ? '编辑渠道' : '添加渠道'}</Dialog.Title>
-        <Dialog.Description>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="p-6 sm:max-w-2xl">
+        <DialogTitle>{channel ? '编辑渠道' : '添加渠道'}</DialogTitle>
+        <DialogDescription>
           {step === 'select'
             ? '选择渠道类型，不同类型对应不同的上游协议'
             : `${def?.icon || ''} ${def?.label || ''} — ${def?.description || ''}`}
-        </Dialog.Description>
+        </DialogDescription>
 
         {step === 'select' ? (
           /* ===== Step 1: 选择渠道类型 ===== */
@@ -407,13 +419,13 @@ function ChannelDialog({
               <button
                 key={t.type}
                 onClick={() => onSelectType(t.type)}
-                className="group flex flex-col items-start gap-1 rounded-lg border border-kumo-line bg-kumo-elevated p-4 text-left transition-all hover:border-kumo-brand hover:bg-kumo-brand-tint hover:shadow-md"
+                className="group flex flex-col items-start gap-1 rounded-lg border border-border bg-card p-4 text-left transition-all hover:border-primary hover:bg-primary/10 hover:shadow-md"
               >
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{t.icon}</span>
-                  <span className="font-semibold text-kumo-strong">{t.label}</span>
+                  <span className="font-semibold text-foreground">{t.label}</span>
                 </div>
-                <Text size="xs" variant="secondary">{t.description}</Text>
+                <p className="text-xs text-muted-foreground">{t.description}</p>
                 {t.qrBindable && (
                   <Badge variant="outline" className="mt-1 text-[10px]">
                     支持扫码绑定
@@ -429,7 +441,7 @@ function ChannelDialog({
             {!channel && (
               <button
                 onClick={() => setStep('select')}
-                className="flex items-center gap-1 text-xs text-kumo-subtle transition-colors hover:text-kumo-default"
+                className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 <ArrowLeft weight="duotone" className="h-3 w-3" />
                 返回选择类型
@@ -438,11 +450,11 @@ function ChannelDialog({
 
             {/* 扫码绑定（仅 WEBHOOK 类型 + 创建模式） */}
             {!channel && def?.qrBindable && (
-              <div className="rounded-lg border border-kumo-brand/20 bg-kumo-brand-tint p-3">
-                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-kumo-strong">
-                  <Star weight="duotone" className="h-4 w-4 text-kumo-brand" />
+              <div className="rounded-lg border border-primary/20 bg-primary/10 p-3">
+                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Star weight="duotone" className="h-4 w-4 text-primary" />
                   扫码绑定上游
-                  <span className="text-[10px] font-normal text-kumo-subtle">
+                  <span className="text-[10px] font-normal text-muted-foreground">
                     （可选）扫上游二维码后自动填充
                   </span>
                 </div>
@@ -470,64 +482,70 @@ function ChannelDialog({
 
             {/* 通用字段 */}
             <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>别名 *</Label>
+                <Input
+                  value={alias}
+                  disabled={!!channel}
+                  placeholder="gpt4"
+                  onChange={(e) => setAlias(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">用于 !switch 命令，仅允许字母/数字/下划线/连字符</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>名称 *</Label>
+                <Input
+                  value={name}
+                  placeholder="GPT-4 Turbo"
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>描述</Label>
               <Input
-                label="别名 *"
-                description="用于 !switch 命令，仅允许字母/数字/下划线/连字符"
-                value={alias}
-                disabled={!!channel}
-                placeholder="gpt4"
-                onChange={(e) => setAlias(e.target.value)}
-              />
-              <Input
-                label="名称 *"
-                value={name}
-                placeholder="GPT-4 Turbo"
-                onChange={(e) => setName(e.target.value)}
+                value={description}
+                placeholder="可选"
+                onChange={(e) => setDescription(e.target.value)}
               />
             </div>
 
-            <Input
-              label="描述"
-              value={description}
-              placeholder="可选"
-              onChange={(e) => setDescription(e.target.value)}
-            />
-
             {/* 类型相关配置字段 */}
-            <div className="rounded-lg border border-kumo-line bg-kumo-recessed p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-kumo-strong">
+            <div className="rounded-lg border border-border bg-muted p-4">
+              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground">
                 <span className="text-lg">{def?.icon}</span>
                 {def?.label} 配置
               </div>
 
               {/* WEBHOOK 类型：显示生成的 webhook URL（编辑模式 + 已有 token 时） */}
               {selectedType === 'WEBHOOK' && channel && getInboundWebhookUrl(channel.alias, channel.config) && (
-                <div className="mb-4 rounded-md border border-kumo-brand/20 bg-kumo-brand-tint p-3">
-                  <div className="mb-1.5 flex items-center gap-1 text-xs font-medium text-kumo-brand">
+                <div className="mb-4 rounded-md border border-primary/20 bg-primary/10 p-3">
+                  <div className="mb-1.5 flex items-center gap-1 text-xs font-medium text-primary">
                     <ArrowUpRight weight="duotone" className="h-3.5 w-3.5" />
                     你的 Webhook URL
                   </div>
-                  <Text size="xs" variant="secondary">
+                  <p className="text-xs text-muted-foreground">
                     客户端向此 URL 发送 POST 请求来推送消息/回复给微信用户
-                  </Text>
+                  </p>
                   <div className="mt-2 flex items-center gap-2">
-                    <code className="flex-1 truncate rounded bg-kumo-base px-2 py-1.5 text-[10px] text-kumo-default">
+                    <code className="flex-1 truncate rounded bg-background px-2 py-1.5 text-[10px] text-foreground">
                       {getInboundWebhookUrl(channel.alias, channel.config)}
                     </code>
                     <Button
                       size="sm"
                       variant="outline"
-                      icon={Copy}
                       onClick={() => {
                         navigator.clipboard.writeText(getInboundWebhookUrl(channel.alias, channel.config) || '');
                         toast({ title: '已复制', description: 'Webhook URL 已复制', variant: 'success' });
                       }}
                     >
+                      <Copy className="h-4 w-4" />
                       复制
                     </Button>
                   </div>
-                  <div className="mt-2 rounded bg-kumo-base p-2 text-[10px] text-kumo-subtle">
-                    <div className="mb-1 font-medium text-kumo-default">请求示例：</div>
+                  <div className="mt-2 rounded bg-background p-2 text-[10px] text-muted-foreground">
+                    <div className="mb-1 font-medium text-foreground">请求示例：</div>
                     <pre className="overflow-x-auto whitespace-pre-wrap break-all">{`POST ${getInboundWebhookUrl(channel.alias, channel.config)}
 Content-Type: application/json
 
@@ -541,8 +559,8 @@ Content-Type: application/json
 
               {/* WEBHOOK 类型：创建模式提示 */}
               {selectedType === 'WEBHOOK' && !channel && (
-                <div className="mb-4 rounded-md border border-kumo-brand/20 bg-kumo-brand-tint p-3 text-xs text-kumo-subtle">
-                  <span className="font-medium text-kumo-brand">📌 创建后将自动生成专属 Webhook URL</span>
+                <div className="mb-4 rounded-md border border-primary/20 bg-primary/10 p-3 text-xs text-muted-foreground">
+                  <span className="font-medium text-primary">📌 创建后将自动生成专属 Webhook URL</span>
                   <br />
                   客户端可通过该 URL 向微信用户推送消息/回复
                 </div>
@@ -562,16 +580,14 @@ Content-Type: application/json
 
             {/* 开关 */}
             <div className="flex items-center gap-6 pt-2">
-              <Switch
-                label="启用"
-                checked={enabled}
-                onCheckedChange={setEnabled}
-              />
-              <Switch
-                label="设为默认渠道"
-                checked={isDefault}
-                onCheckedChange={setIsDefault}
-              />
+              <div className="flex items-center gap-2">
+                <Switch checked={enabled} onCheckedChange={setEnabled} />
+                <Label>启用</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={isDefault} onCheckedChange={setIsDefault} />
+                <Label>设为默认渠道</Label>
+              </div>
             </div>
 
             {/* 操作按钮 */}
@@ -579,14 +595,14 @@ Content-Type: application/json
               <Button variant="outline" onClick={onClose} disabled={saving}>
                 取消
               </Button>
-              <Button variant="primary" onClick={onSubmit} loading={saving}>
+              <Button variant="default" onClick={onSubmit} loading={saving}>
                 {channel ? '保存' : '创建'}
               </Button>
             </div>
           </div>
         )}
-      </Dialog>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -606,17 +622,18 @@ function ConfigFieldInput({
   const label = (
     <>
       {field.label}
-      {field.required && <span className="ml-1 text-kumo-danger">*</span>}
+      {field.required && <span className="ml-1 text-destructive">*</span>}
     </>
   );
 
   if (field.type === 'select') {
     return (
-      <Field label={label} description={field.help}>
+      <div className="space-y-1.5">
+        <Label>{label}</Label>
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex h-9 w-full rounded-lg border border-kumo-line bg-kumo-base px-3 text-base focus:outline-none focus:ring-2 focus:ring-kumo-focus/50"
+          className="flex h-9 w-full rounded-lg border border-border bg-background px-3 text-base focus:outline-none focus:ring-2 focus:ring-ring/50"
         >
           {field.options?.map((o) => (
             <option key={o.value} value={o.value}>
@@ -624,31 +641,36 @@ function ConfigFieldInput({
             </option>
           ))}
         </select>
-      </Field>
+        {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
+      </div>
     );
   }
 
   if (field.type === 'textarea') {
     return (
-      <InputArea
-        label={label}
-        description={field.help}
-        value={value}
-        placeholder={field.placeholder}
-        rows={3}
-        onChange={(e) => onChange(e.target.value)}
-      />
+      <div className="space-y-1.5">
+        <Label>{label}</Label>
+        <Textarea
+          value={value}
+          placeholder={field.placeholder}
+          rows={3}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
+      </div>
     );
   }
 
   return (
-    <Input
-      label={label}
-      description={field.help}
-      type={field.type === 'password' ? 'password' : field.type === 'number' ? 'number' : 'text'}
-      value={value}
-      placeholder={field.placeholder}
-      onChange={(e) => onChange(e.target.value)}
-    />
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <Input
+        type={field.type === 'password' ? 'password' : field.type === 'number' ? 'number' : 'text'}
+        value={value}
+        placeholder={field.placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
+    </div>
   );
 }
